@@ -7,8 +7,8 @@ A series of skills for **context engineering** — helping AI agents understand 
 | Skill | Description |
 |-------|-------------|
 | [multi-agentsmd](./multi-agentsmd/) | Generate layered AGENTS.md for structured projects with sub-directories |
-| multi-agentsmd-rules | *(coming soon)* Add user-defined rules and constraints to AGENTS.md |
-| create-agentsmd | *(coming soon)* Generate a root AGENTS.md for any repository |
+| [multi-agentsmd-rules](./multi-agentsmd-rules/) | Add user-defined rules and constraints to AGENTS.md |
+| [create-agentsmd](./create-agentsmd/) | Generate a root AGENTS.md for any repository |
 
 ## Philosophy
 
