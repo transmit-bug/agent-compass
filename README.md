@@ -7,14 +7,14 @@ A collection of skills for **context engineering** — helping AI agents underst
 ## Installation
 
 ```bash
-npx skills add agent-compass
+npx skills add transmit-bug/agent-compass
 ```
 
 Or install specific skills:
 
 ```bash
-npx skills add agent-compass --skill create-agentsmd
-npx skills add agent-compass --skill multi-agentsmd
+npx skills add transmit-bug/agent-compass --skill create-agentsmd
+npx skills add transmit-bug/agent-compass --skill multi-agentsmd
 ```
 
 ## Skills
