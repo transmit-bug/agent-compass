@@ -1,6 +1,12 @@
 ---
 name: multi-agentsmd-rules
-description: 'Add user-defined rules, constraints, and guidelines to AGENTS.md files. Use when the user wants to tell the AI what to do or avoid in specific directories — conventions, requirements, guardrails that aren''t obvious from the code.'
+description: 'Add rules and constraints to AGENTS.md. Use when the user wants to enforce conventions in specific directories.'
+license: MIT
+metadata:
+  author: agent-compass
+  version: "1.0"
+  category: documentation
+allowed-tools: Read Write AskUserQuestion
 ---
 
 # AGENTS.md Rules

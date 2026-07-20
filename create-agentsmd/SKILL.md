@@ -1,6 +1,12 @@
 ---
 name: create-agentsmd
-description: 'Prompt for generating an AGENTS.md file for a repository'
+description: 'Generate root AGENTS.md for any repository. Use when creating or updating project-level agent instructions.'
+license: MIT
+metadata:
+  author: agent-compass
+  version: "1.0"
+  category: documentation
+allowed-tools: Read Bash Write
 ---
 
 # Create high‑quality AGENTS.md file

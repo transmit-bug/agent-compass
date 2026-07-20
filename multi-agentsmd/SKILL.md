@@ -1,6 +1,12 @@
 ---
 name: multi-agentsmd
-description: 'Generate layered AGENTS.md for structured projects. Use when creating or updating AGENTS.md in projects with sub-directories.'
+description: 'Generate layered AGENTS.md for monorepos. Use when sub-directories need their own agent context.'
+license: MIT
+metadata:
+  author: agent-compass
+  version: "1.0"
+  category: documentation
+allowed-tools: Read Bash Write
 ---
 
 # Multi-level AGENTS.md
