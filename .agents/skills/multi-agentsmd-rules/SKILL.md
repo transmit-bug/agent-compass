@@ -6,6 +6,7 @@ metadata:
   author: agent-compass
   version: "1.0"
   category: documentation
+allowed-tools: Read Write AskUserQuestion
 ---
 
 # AGENTS.md Rules

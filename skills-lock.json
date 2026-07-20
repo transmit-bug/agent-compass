@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "skills": {
+    "create-agentsmd": {
+      "source": "transmit-bug/agent-compass",
+      "sourceType": "github",
+      "skillPath": "create-agentsmd/SKILL.md",
+      "computedHash": "9add89f5f814afb14b5791d5638984c6f366cb7252abc98cf43e8073dce48e51"
+    },
+    "multi-agentsmd": {
+      "source": "transmit-bug/agent-compass",
+      "sourceType": "github",
+      "skillPath": "multi-agentsmd/SKILL.md",
+      "computedHash": "af10169300b425c29d3eb71930a5ef0f679f5e3ee127d1976b819231c42ad3b8"
+    },
+    "multi-agentsmd-rules": {
+      "source": "transmit-bug/agent-compass",
+      "sourceType": "github",
+      "skillPath": "multi-agentsmd-rules/SKILL.md",
+      "computedHash": "62b7c3e027c5392e7337539c3831bcad4459f288ca9cc54fdd5785c05c14e0de"
+    }
+  }
+}
