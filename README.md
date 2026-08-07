@@ -39,7 +39,7 @@ Vision-driven desktop control (Midscene) split into two layers, with one-way, ex
 - **Business layer** — `uichecker`, `ui-fixer`, `smoke-runner`: software-development workflows built on top of the session. Each is an independent skill with a single dependency: `computer-automation`.
 
 ```
-Business layer (invoked by name)          Operation layer (auto-invoked)
+Business layer (user-invoked)             Operation layer (user-invoked)
 ┌────────────────────────────┐           ┌──────────────────────────────────────────┐
 │  uichecker     verify UI   │           │  computer-automation (SKILL.md)           │
 │  ui-fixer      fix to      │──────────▶│    ├─ scripts/mid.sh        session       │
@@ -50,7 +50,7 @@ Business layer (invoked by name)          Operation layer (auto-invoked)
                                          └──────────────────────────────────────────┘
 ```
 
-- `uichecker` → `computer-automation` → `scripts/mid.sh` → `midagent.js` (daemon, requires local `@midscene/computer`) with `screen-diff.py` gate; falls back to the stateless CLI.
+- `uichecker` → `computer-automation` → `scripts/mid.sh` → `midagent.js` (daemon; resolves `@midscene/computer` from the project `node_modules`, falling back to a machine-wide global install) with `screen-diff.py` gate; falls back to the stateless CLI.
 - `ui-fixer` additionally uses ImageMagick `compare` for the pixel signal and edits source code itself (the only business skill that changes code).
 - Runtime deps: node ≥ 18, python3 + Pillow, ImageMagick (`uichecker`, `ui-fixer`).
 - **Model config is assumed** (`MIDSCENE_MODEL_*` in `.env`) — deliberately not documented inside the skills; it is environment setup, not a workflow concern.
@@ -61,9 +61,18 @@ Install:
 npx skills add transmit-bug/agent-compass --skill computer-automation --skill uichecker --skill ui-fixer --skill smoke-runner
 ```
 
-Business skills are **user-invoked** (`disable-model-invocation: true`): they stay out of the system prompt (zero context load) and fire when you name them — "use uichecker to check the export dialog", "use ui-fixer to make the UI match this image", "smoke-run the app".
+All four skills are **user-invoked** (`disable-model-invocation: true`): the group costs zero
+context and nothing fires without your call — desktop automation takes over your real mouse
+and keyboard, so that gate is deliberate. Name the skill(s) you need: "uichecker +
+computer-automation, check the export dialog", "ui-fixer + computer-automation, make the UI
+match this image", "smoke-runner + computer-automation, verify the export flow".
 
-**Extending the group**: a new business workflow is a new top-level `<name>/SKILL.md` with `disable-model-invocation: true`, a `## Dependencies` section naming `computer-automation`, steps written against the session commands (`mid.sh start / shot / act / assert / finish`), and an entry in this table + `skills-lock.json`. Keep the layers clean: the business skill decides *what* and *when*; `computer-automation` decides *how*.
+**Extending the group**: a new business workflow is a new top-level `<name>/SKILL.md` with
+`disable-model-invocation: true`, a `## Dependencies` section naming `computer-automation`
+(the user loads both by name), steps written against the session commands
+(`mid.sh start / shot / act / assert / finish`), and an entry in this table +
+`skills-lock.json`. Keep the layers clean: the business skill decides *what* and *when*;
+`computer-automation` decides *how*.
 
 ## Philosophy
 
