@@ -2,7 +2,34 @@
 
 [![skills.sh](https://skills.sh/b/agent-compass)](https://skills.sh/agent-compass)
 
-A collection of skills for **context engineering** — helping AI agents understand project structure, navigate codebases, and follow project conventions.
+A collection of skills for AI agent workflows, organized by domain:
+
+- **content-manager** — the context an agent carries into a project (AGENTS.md generation and constraints)
+- **computer-vision** — multimodal-vision-driven UI automation (desktop app testing & fixing)
+- **agent-browser** — *(reserved)* web-application development, testing, maintenance and smoke verification driven by the agent-browser toolset
+
+## Repository Layout
+
+```
+agent-compass/
+├── skills/
+│   ├── content-manager/          # AI 纳入的管理上下文
+│   │   ├── create-agentsmd/
+│   │   ├── multi-agentsmd/
+│   │   └── multi-agentsmd-rules/
+│   ├── computer-vision/          # 多模态识别 + UI 自动化
+│   │   ├── computer-automation/
+│   │   ├── uichecker/
+│   │   ├── ui-fixer/
+│   │   └── smoke-runner/
+│   └── agent-browser/            # (预留) Web 应用开发/测试/维护/冒烟
+├── skills-lock.json
+└── README.md
+```
+
+`skills/` is the standard container directory: the skills CLI walks it up to 3 levels deep,
+so category folders are discovered natively. Each category is a sub-directory; every skill
+remains a self-contained directory with its own `SKILL.md` (Agent Skills spec compliant).
 
 ## Installation
 
@@ -15,23 +42,22 @@ Or install specific skills:
 ```bash
 npx skills add transmit-bug/agent-compass --skill create-agentsmd
 npx skills add transmit-bug/agent-compass --skill multi-agentsmd
+npx skills add transmit-bug/agent-compass --skill computer-automation --skill uichecker --skill ui-fixer --skill smoke-runner
 ```
 
-## Skills
+## Categories
+
+### content-manager — the context an agent carries in
+
+Skills for building agent-readable project context: root-level, directory-level, and rule-level instructions.
 
 | Skill | Description |
 |-------|-------------|
-| [create-agentsmd](./create-agentsmd/) | Generate a complete AGENTS.md file for any repository |
-| [multi-agentsmd](./multi-agentsmd/) | Generate layered AGENTS.md for structured projects with sub-directories |
-| [multi-agentsmd-rules](./multi-agentsmd-rules/) | Add user-defined rules and constraints to AGENTS.md files |
+| [create-agentsmd](./skills/content-manager/create-agentsmd/) | Generate a complete AGENTS.md file for any repository |
+| [multi-agentsmd](./skills/content-manager/multi-agentsmd/) | Generate layered AGENTS.md for structured projects with sub-directories |
+| [multi-agentsmd-rules](./skills/content-manager/multi-agentsmd-rules/) | Add user-defined rules and constraints to AGENTS.md files |
 
-## Groups
-
-| Group | Skills | Description |
-|-------|--------|-------------|
-| **computeruse** | [`computer-automation`](./computer-automation/), [`uichecker`](./uichecker/), [`ui-fixer`](./ui-fixer/), [`smoke-runner`](./smoke-runner/) | Midscene desktop automation wrapped in business skills |
-
-### computeruse — desktop automation, wrapped in business skills
+### computer-vision — multimodal UI automation
 
 Vision-driven desktop control (Midscene) split into two layers, with one-way, explicit dependencies:
 
@@ -55,24 +81,23 @@ Business layer (user-invoked)             Operation layer (user-invoked)
 - Runtime deps: node ≥ 18, python3 + Pillow, ImageMagick (`uichecker`, `ui-fixer`).
 - **Model config is assumed** (`MIDSCENE_MODEL_*` in `.env`) — deliberately not documented inside the skills; it is environment setup, not a workflow concern.
 
-Install:
-
-```bash
-npx skills add transmit-bug/agent-compass --skill computer-automation --skill uichecker --skill ui-fixer --skill smoke-runner
-```
-
 All four skills are **user-invoked** (`disable-model-invocation: true`): the group costs zero
 context and nothing fires without your call — desktop automation takes over your real mouse
 and keyboard, so that gate is deliberate. Name the skill(s) you need: "uichecker +
 computer-automation, check the export dialog", "ui-fixer + computer-automation, make the UI
 match this image", "smoke-runner + computer-automation, verify the export flow".
 
-**Extending the group**: a new business workflow is a new top-level `<name>/SKILL.md` with
-`disable-model-invocation: true`, a `## Dependencies` section naming `computer-automation`
-(the user loads both by name), steps written against the session commands
-(`mid.sh start / shot / act / assert / finish`), and an entry in this table +
+**Extending the group**: a new business workflow is a new `<category>/<name>/SKILL.md` under
+`skills/computer-vision/` with `disable-model-invocation: true`, a `## Dependencies` section
+naming `computer-automation` (the user loads both by name), steps written against the session
+commands (`mid.sh start / shot / act / assert / finish`), and an entry in the category table +
 `skills-lock.json`. Keep the layers clean: the business skill decides *what* and *when*;
 `computer-automation` decides *how*.
+
+### agent-browser — *(reserved)* web development & QA
+
+Placeholder for a future suite driven by the agent-browser toolset: full web-application
+development, testing, maintenance, and smoke verification.
 
 ## Philosophy
 
@@ -100,13 +125,13 @@ These skills work with any agent that supports the Agent Skills standard:
 To validate skills locally:
 
 ```bash
-npx skills-ref validate ./create-agentsmd
-npx skills-ref validate ./multi-agentsmd
-npx skills-ref validate ./multi-agentsmd-rules
-npx skills-ref validate ./computer-automation
-npx skills-ref validate ./uichecker
-npx skills-ref validate ./ui-fixer
-npx skills-ref validate ./smoke-runner
+npx skills-ref validate ./skills/content-manager/create-agentsmd
+npx skills-ref validate ./skills/content-manager/multi-agentsmd
+npx skills-ref validate ./skills/content-manager/multi-agentsmd-rules
+npx skills-ref validate ./skills/computer-vision/computer-automation
+npx skills-ref validate ./skills/computer-vision/uichecker
+npx skills-ref validate ./skills/computer-vision/ui-fixer
+npx skills-ref validate ./skills/computer-vision/smoke-runner
 ```
 
 ## License
