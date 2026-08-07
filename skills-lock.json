@@ -1,23 +1,47 @@
 {
   "version": 1,
   "skills": {
+    "computer-automation": {
+      "source": "transmit-bug/agent-compass",
+      "sourceType": "github",
+      "skillPath": "computer-automation/SKILL.md",
+      "computedHash": "ba2a2adac925b0f7a552b59588a6630603e449ab062757c296e1286269423f32"
+    },
     "create-agentsmd": {
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "create-agentsmd/SKILL.md",
-      "computedHash": "9add89f5f814afb14b5791d5638984c6f366cb7252abc98cf43e8073dce48e51"
+      "computedHash": "c4ad7256e44bc41474bdbc2216cc5ff486e114af206a37c657b05f3ecab8d5c1"
     },
     "multi-agentsmd": {
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "multi-agentsmd/SKILL.md",
-      "computedHash": "af10169300b425c29d3eb71930a5ef0f679f5e3ee127d1976b819231c42ad3b8"
+      "computedHash": "267ae5338e6b58fdeb36436c8a04875339e03949becc5676da374596a0c8cff3"
     },
     "multi-agentsmd-rules": {
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "multi-agentsmd-rules/SKILL.md",
-      "computedHash": "62b7c3e027c5392e7337539c3831bcad4459f288ca9cc54fdd5785c05c14e0de"
+      "computedHash": "97c11368064ab62c636ecf5627173971db08de14c0795bc3db413d12a3f9cd0f"
+    },
+    "smoke-runner": {
+      "source": "transmit-bug/agent-compass",
+      "sourceType": "github",
+      "skillPath": "smoke-runner/SKILL.md",
+      "computedHash": "a60507b28cce70f416b3641552b2c5ac64c86ff29a48ce6b6867712ce1ccad47"
+    },
+    "ui-fixer": {
+      "source": "transmit-bug/agent-compass",
+      "sourceType": "github",
+      "skillPath": "ui-fixer/SKILL.md",
+      "computedHash": "62eeab338e12eef3020e490cc2aab09552cdb26326149b2616a1fd67e34a5003"
+    },
+    "uichecker": {
+      "source": "transmit-bug/agent-compass",
+      "sourceType": "github",
+      "skillPath": "uichecker/SKILL.md",
+      "computedHash": "fe54dbb00ef1e56a4953fce20af5c266c64253477dffe505e83a4d5fc3e87646"
     }
   }
 }

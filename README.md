@@ -25,6 +25,46 @@ npx skills add transmit-bug/agent-compass --skill multi-agentsmd
 | [multi-agentsmd](./multi-agentsmd/) | Generate layered AGENTS.md for structured projects with sub-directories |
 | [multi-agentsmd-rules](./multi-agentsmd-rules/) | Add user-defined rules and constraints to AGENTS.md files |
 
+## Groups
+
+| Group | Skills | Description |
+|-------|--------|-------------|
+| **computeruse** | [`computer-automation`](./computer-automation/), [`uichecker`](./uichecker/), [`ui-fixer`](./ui-fixer/), [`smoke-runner`](./smoke-runner/) | Midscene desktop automation wrapped in business skills |
+
+### computeruse — desktop automation, wrapped in business skills
+
+Vision-driven desktop control (Midscene) split into two layers, with one-way, explicit dependencies:
+
+- **Operation layer** — `computer-automation`: a persistent **session** daemon that connects once, gates every AI call behind a local screen-diff (zero LLM on unchanged frames), and archives every run (`index.md` + merged report). This is the midscene wrapper — the cost and speed optimization.
+- **Business layer** — `uichecker`, `ui-fixer`, `smoke-runner`: software-development workflows built on top of the session. Each is an independent skill with a single dependency: `computer-automation`.
+
+```
+Business layer (invoked by name)          Operation layer (auto-invoked)
+┌────────────────────────────┐           ┌──────────────────────────────────────────┐
+│  uichecker     verify UI   │           │  computer-automation (SKILL.md)           │
+│  ui-fixer      fix to      │──────────▶│    ├─ scripts/mid.sh        session       │
+│                match image │  depends  │    │    └─ midagent.js       daemon       │
+│  smoke-runner  run flow +  │   on      │    ├─ scripts/screen-diff.py  diff gate   │
+│                PASS/FAIL   │           │    ├─ scripts/extract-steps.py  report    │
+└────────────────────────────┘           │    └─ npx @midscene/computer@1  CLI (fb)  │
+                                         └──────────────────────────────────────────┘
+```
+
+- `uichecker` → `computer-automation` → `scripts/mid.sh` → `midagent.js` (daemon, requires local `@midscene/computer`) with `screen-diff.py` gate; falls back to the stateless CLI.
+- `ui-fixer` additionally uses ImageMagick `compare` for the pixel signal and edits source code itself (the only business skill that changes code).
+- Runtime deps: node ≥ 18, python3 + Pillow, ImageMagick (`uichecker`, `ui-fixer`).
+- **Model config is assumed** (`MIDSCENE_MODEL_*` in `.env`) — deliberately not documented inside the skills; it is environment setup, not a workflow concern.
+
+Install:
+
+```bash
+npx skills add transmit-bug/agent-compass --skill computer-automation --skill uichecker --skill ui-fixer --skill smoke-runner
+```
+
+Business skills are **user-invoked** (`disable-model-invocation: true`): they stay out of the system prompt (zero context load) and fire when you name them — "use uichecker to check the export dialog", "use ui-fixer to make the UI match this image", "smoke-run the app".
+
+**Extending the group**: a new business workflow is a new top-level `<name>/SKILL.md` with `disable-model-invocation: true`, a `## Dependencies` section naming `computer-automation`, steps written against the session commands (`mid.sh start / shot / act / assert / finish`), and an entry in this table + `skills-lock.json`. Keep the layers clean: the business skill decides *what* and *when*; `computer-automation` decides *how*.
+
 ## Philosophy
 
 > **Write what would confuse an agent, skip what wouldn't.**
@@ -54,6 +94,10 @@ To validate skills locally:
 npx skills-ref validate ./create-agentsmd
 npx skills-ref validate ./multi-agentsmd
 npx skills-ref validate ./multi-agentsmd-rules
+npx skills-ref validate ./computer-automation
+npx skills-ref validate ./uichecker
+npx skills-ref validate ./ui-fixer
+npx skills-ref validate ./smoke-runner
 ```
 
 ## License
