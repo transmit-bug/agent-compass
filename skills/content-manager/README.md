@@ -1,12 +1,13 @@
-# content-manager — AI 纳入的管理上下文
+# content-manager — the context an agent carries in
 
 Skills for building the context an AI agent carries into a project.
 
 | Skill | What it does |
 |-------|--------------|
-| [create-agentsmd](./create-agentsmd/) | Generate root-level `AGENTS.md` for any repository |
-| [multi-agentsmd](./multi-agentsmd/) | Generate layered `AGENTS.md` for structured projects / monorepos |
-| [multi-agentsmd-rules](./multi-agentsmd-rules/) | Add user-defined rules, constraints and guardrails to `AGENTS.md` |
+| [agentsmd](./agentsmd/) | Author `AGENTS.md` agent instructions — three modes: **root** (repository-level file), **layered** (per-directory files for monorepos), **rules** (user constraints and guardrails) |
 
-Each skill is independent. New context-management skills (project scaffolding, conventions,
-architecture docs, etc.) belong in this category.
+One skill, three modes. Invoke with an argument to pick a mode (`/agentsmd layered`,
+`/agentsmd rules`); without one, the agent infers the mode from the repository and the request.
+
+New context-management skills (project scaffolding, conventions, architecture docs, etc.)
+belong in this category.

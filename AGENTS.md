@@ -40,9 +40,9 @@ README.md                        # human index (skill list lives here, not repea
    skills go in `skills/<name>/`
 3. SKILL.md must follow:
    - All skills in this repo are `disable-model-invocation: true` (user-invoked, zero
-     context load) — **exception**: the `frontend` group (and the `agent-browser`
-     operation-layer stub) ship model-invoked by design; their value is automatic
-     reach, so the zero-context rule is waived there
+     context load) — **exceptions**: the `frontend` group (and the `agent-browser`
+     operation-layer stub) and `content-manager/agentsmd` ship model-invoked by design;
+     their value is automatic reach, so the zero-context rule is waived there
    - Steps have checkable completion criteria; guardrails are stated positively
    - Shared mechanics go in category-level `scripts/`, shared contracts in category-level
      `references/`; skills point to them via relative paths, zero duplication

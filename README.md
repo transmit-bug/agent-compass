@@ -16,9 +16,7 @@ A collection of skills for AI agent workflows, organized by domain:
 agent-compass/
 ├── skills/
 │   ├── content-manager/          # context an agent carries in
-│   │   ├── create-agentsmd/
-│   │   ├── multi-agentsmd/
-│   │   └── multi-agentsmd-rules/
+│   │   └── agentsmd/             # root | layered | rules — one skill, three modes
 │   ├── desktop-automation/    # desktop automation (drive/verify/fix)
 │   │   ├── computer-automation/
 │   │   ├── uichecker/
@@ -57,8 +55,7 @@ npx skills add transmit-bug/agent-compass
 Or install specific skills:
 
 ```bash
-npx skills add transmit-bug/agent-compass --skill create-agentsmd
-npx skills add transmit-bug/agent-compass --skill multi-agentsmd
+npx skills add transmit-bug/agent-compass --skill agentsmd
 npx skills add transmit-bug/agent-compass --skill computer-automation --skill uichecker --skill ui-fixer --skill smoke-runner
 ```
 
@@ -66,13 +63,12 @@ npx skills add transmit-bug/agent-compass --skill computer-automation --skill ui
 
 ### content-manager — the context an agent carries in
 
-Skills for building agent-readable project context: root-level, directory-level, and rule-level instructions.
+Skills for building agent-readable project context. One skill, three modes: root-level,
+directory-level (layered), and rule-level instructions.
 
 | Skill | Description |
 |-------|-------------|
-| [create-agentsmd](./skills/content-manager/create-agentsmd/) | Generate a complete AGENTS.md file for any repository |
-| [multi-agentsmd](./skills/content-manager/multi-agentsmd/) | Generate layered AGENTS.md for structured projects with sub-directories |
-| [multi-agentsmd-rules](./skills/content-manager/multi-agentsmd-rules/) | Add user-defined rules and constraints to AGENTS.md files |
+| [agentsmd](./skills/content-manager/agentsmd/) | Author AGENTS.md in three modes — **root** (repository-level file), **layered** (per-directory files for monorepos), **rules** (user constraints/guardrails). Argument: `root \| layered \| rules` |
 
 ### desktop-automation — desktop-application automation
 
@@ -150,9 +146,8 @@ context by design; if you prefer zero context, install it per-project instead.
 
 Each skill focuses on a specific aspect of building agent-readable project context:
 
-- **create-agentsmd**: Root-level project context (setup, testing, deployment)
-- **multi-agentsmd**: Directory-level architecture and patterns
-- **multi-agentsmd-rules**: User-defined constraints and guardrails
+- **agentsmd**: AGENTS.md authoring — root-level context (setup, testing, deployment), directory-level
+  architecture (layered), and user-defined constraints (rules), one skill with three modes
 
 ## Supported Agents
 
@@ -170,9 +165,7 @@ These skills work with any agent that supports the Agent Skills standard:
 To validate skills locally:
 
 ```bash
-npx skills-ref validate ./skills/content-manager/create-agentsmd
-npx skills-ref validate ./skills/content-manager/multi-agentsmd
-npx skills-ref validate ./skills/content-manager/multi-agentsmd-rules
+npx skills-ref validate ./skills/content-manager/agentsmd
 npx skills-ref validate ./skills/desktop-automation/computer-automation
 npx skills-ref validate ./skills/desktop-automation/uichecker
 npx skills-ref validate ./skills/desktop-automation/ui-fixer

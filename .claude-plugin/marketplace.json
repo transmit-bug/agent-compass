@@ -4,9 +4,7 @@
       "name": "content-manager",
       "source": "./",
       "skills": [
-        "./skills/content-manager/create-agentsmd",
-        "./skills/content-manager/multi-agentsmd",
-        "./skills/content-manager/multi-agentsmd-rules"
+        "./skills/content-manager/agentsmd"
       ]
     },
     {

@@ -18,24 +18,6 @@
       "skillPath": "skills/desktop-automation/computer-automation/SKILL.md",
       "computedHash": "061b6341017bb733ce8c64dab534a406b39f15288eabe5b771ad776e997d2faa"
     },
-    "create-agentsmd": {
-      "source": "transmit-bug/agent-compass",
-      "sourceType": "github",
-      "skillPath": "skills/content-manager/create-agentsmd/SKILL.md",
-      "computedHash": "c4ad7256e44bc41474bdbc2216cc5ff486e114af206a37c657b05f3ecab8d5c1"
-    },
-    "multi-agentsmd": {
-      "source": "transmit-bug/agent-compass",
-      "sourceType": "github",
-      "skillPath": "skills/content-manager/multi-agentsmd/SKILL.md",
-      "computedHash": "267ae5338e6b58fdeb36436c8a04875339e03949becc5676da374596a0c8cff3"
-    },
-    "multi-agentsmd-rules": {
-      "source": "transmit-bug/agent-compass",
-      "sourceType": "github",
-      "skillPath": "skills/content-manager/multi-agentsmd-rules/SKILL.md",
-      "computedHash": "97c11368064ab62c636ecf5627173971db08de14c0795bc3db413d12a3f9cd0f"
-    },
     "smoke-runner": {
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
@@ -100,6 +82,12 @@
       "sourceType": "github",
       "skillPath": "skills/logic-test/SKILL.md",
       "computedHash": "9252cb7dce764104387ed5f4dd66e2a40016318a2acdf67a1e115e87e9087660"
+    },
+    "agentsmd": {
+      "source": "transmit-bug/agent-compass",
+      "sourceType": "github",
+      "skillPath": "skills/content-manager/agentsmd/SKILL.md",
+      "computedHash": "d5ec65d37b429719b757ee8db8abbfddc1adb63e4c2864dffe87bae77e4e9a13"
     }
   }
 }
