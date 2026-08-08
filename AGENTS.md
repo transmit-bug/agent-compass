@@ -1,47 +1,79 @@
 # AGENTS.md
 
-## 这个仓库是做什么的
+## What this repository is
 
-agent-compass 是一个 **Agent Skills 技能集合仓库**：技能按分类组织，通过 GitHub + skills CLI
-（`npx skills`）分发安装。它的产物是"可安装的技能"，不是应用代码。
+agent-compass is an **Agent Skills collection repository**: skills are organized by
+category and distributed via GitHub + the skills CLI (`npx skills`). Its artifact is
+"installable skills", not application code.
 
-- 用分类容器组织技能，用 `.claude-plugin/marketplace.json` 分组安装
-- 技能遵循 Agent Skills 规范 + writing-great-skills 原则
-- 跨领域能力优先泛化成一个技能，不为每个领域堆技能
+- Skills are organized into category containers, installed in groups via
+  `.claude-plugin/marketplace.json`
+- Skills follow the Agent Skills spec + writing-great-skills principles
+- Generalize cross-domain capabilities into one skill instead of stacking one skill
+  per domain
 
-## 组织结构
+## Language
+
+**All content in this repository must be written in English** — every document, skill,
+comment, commit message, and record. Do not add content in Chinese or any other language.
+
+## Repository layout
 
 ```
-skills/                        # 技能容器（CLI 递归深度 3）
-├── content-manager/           # AI 纳入的上下文（AGENTS.md 生成与约束）
-├── desktop-automation/        # 桌面应用自动化（midscene）
-├── agent-browser/             # Web 应用开发/测试/维护/冒烟
-└── logic-test/                # 跨领域技能放容器根级
-.claude-plugin/marketplace.json  # 安装分组（source 必须 "./"，裸 "." 无效）
-skills-lock.json                 # 技能注册表（skillPath + computedHash）
-README.md                        # 人类索引（技能清单在这里，本文件不重复）
+skills/                        # skill containers (CLI recursion depth 3)
+├── content-manager/           # the context an agent carries in (AGENTS.md generation & constraints)
+├── desktop-automation/        # desktop-application automation (midscene)
+├── agent-browser/             # web-app development / testing / maintenance / smoke (+ operation-layer stub)
+├── frontend/                  # frontend design guidance (vendor-tracked from upstream)
+└── logic-test/                # cross-domain skills live at the container root
+.claude-plugin/marketplace.json  # install groups (source must be "./"; bare "." is invalid)
+skills-lock.json                 # skill registry (skillPath + computedHash [+ upstream])
+scripts/sync-upstream.sh         # check/pull vendored skills against their upstream sources
+README.md                        # human index (skill list lives here, not repeated in this file)
 ```
 
-## 新增技能
+## Adding a skill
 
-1. 先判断值不值得独立成技能：泛化优先 —— 用分支（branch）让一个技能覆盖多领域，
-   而不是每个领域各写一个
-2. 放到正确分类：`skills/<category>/<name>/SKILL.md`；跨领域放 `skills/<name>/`
-3. SKILL.md 遵守：
-   - 本仓库技能全部 `disable-model-invocation: true`（user-invoked，零 context load）
-   - 步骤有可检查的完成准则；guardrail 正向表述
-   - 共享机制放分类级 `scripts/`，共享契约放分类级 `references/`，技能内用相对路径指过去，零复制
-   - 意图（怎么做、做到什么算好）用 Markdown；记录（做了什么、结果）用 JSON；
-     确定性计算进脚本，判断留给 agent
-4. 同步三处：`skills-lock.json` 注册 + `.claude-plugin/marketplace.json` 分组 + README 索引
+1. First judge whether it deserves to be its own skill: generalization first — use
+   branches (one skill, multiple domains) rather than writing one skill per domain
+2. Place it in the right category: `skills/<category>/<name>/SKILL.md`; cross-domain
+   skills go in `skills/<name>/`
+3. SKILL.md must follow:
+   - All skills in this repo are `disable-model-invocation: true` (user-invoked, zero
+     context load) — **exception**: the `frontend` group (and the `agent-browser`
+     operation-layer stub) ship model-invoked by design; their value is automatic
+     reach, so the zero-context rule is waived there
+   - Steps have checkable completion criteria; guardrails are stated positively
+   - Shared mechanics go in category-level `scripts/`, shared contracts in category-level
+     `references/`; skills point to them via relative paths, zero duplication
+   - Intent (how to do it, what "good" looks like) goes in Markdown; records (what was
+     done, results) go in JSON; deterministic computation goes into scripts, judgment
+     stays with the agent
+4. Sync three places: register in `skills-lock.json` + group in
+   `.claude-plugin/marketplace.json` + index in README
 
-## 修改技能
+## Vendoring a skill from upstream
 
-- 内容改动后必须更新 `skills-lock.json` 的 `computedHash`：
-  sha256(按相对路径排序的 relativePath+content 拼接)；目录移动只改 `skillPath`，hash 不变
-- 一个含义只保留一处（单一事实源）：共享逻辑改分类级脚本/契约，不改各技能副本
+- Copy the skill files into the repo, keep its license file, and add an `upstream` block
+  to its `skills-lock.json` entry:
+  `{ "repo": "<owner>/<name>", "path": "<path/to/SKILL.md>", "ref": "main" }`
+- Track drift with `./scripts/sync-upstream.sh --check` (report only) or without
+  `--check` (pull changed files + recompute hashes). Review with `git diff` before
+  committing — a vendored copy may carry local polish that a blind pull would overwrite.
+- Don't mirror whole upstream collections: vendor only the skills you curated, and keep
+  the originals installable from their own source.
 
-## 验证
+## Modifying a skill
 
-- 用临时目录跑 `npx skills add <repo> --list` 确认发现与分组，**不要全局安装**
-- 本地验证在项目目录内（project 级），不污染全局技能目录
+- After content changes you must update `computedHash` in `skills-lock.json`:
+  sha256(concatenation of relativePath+content, files sorted by relative path); a
+  directory move only changes `skillPath`, the hash stays the same
+- Keep a single source of truth for every meaning: shared logic goes into category-level
+  scripts/contracts, not copies in each skill
+
+## Validation
+
+- Run `npx skills add <repo> --list` in a temp directory to confirm discovery and
+  grouping; do **not** install globally
+- Validate locally inside the project directory (project-level), don't pollute the
+  global skills directory

@@ -23,11 +23,20 @@
       "name": "agent-browser",
       "source": "./",
       "skills": [
+        "./skills/agent-browser/agent-browser",
         "./skills/agent-browser/web-checker",
         "./skills/agent-browser/web-dev",
         "./skills/agent-browser/web-fixer",
         "./skills/agent-browser/web-maintain",
         "./skills/agent-browser/web-smoke"
+      ]
+    },
+    {
+      "name": "frontend",
+      "source": "./",
+      "skills": [
+        "./skills/frontend/frontend-design",
+        "./skills/agent-browser/agent-browser"
       ]
     },
     {

@@ -1,11 +1,22 @@
 {
   "version": 1,
   "skills": {
+    "agent-browser": {
+      "source": "transmit-bug/agent-compass",
+      "sourceType": "github",
+      "skillPath": "skills/agent-browser/agent-browser/SKILL.md",
+      "computedHash": "548a1f92c7ff55081c65ec1577ff5136beb1d0f58252d448d5bd43f05fefc703",
+      "upstream": {
+        "repo": "vercel-labs/agent-browser",
+        "path": "skills/agent-browser/SKILL.md",
+        "ref": "main"
+      }
+    },
     "computer-automation": {
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/desktop-automation/computer-automation/SKILL.md",
-      "computedHash": "a6406d7b643c1dab76ea5eca70bb7081610d75e74236b8adce10da8891d3e482"
+      "computedHash": "061b6341017bb733ce8c64dab534a406b39f15288eabe5b771ad776e997d2faa"
     },
     "create-agentsmd": {
       "source": "transmit-bug/agent-compass",
@@ -29,19 +40,19 @@
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/desktop-automation/smoke-runner/SKILL.md",
-      "computedHash": "a60507b28cce70f416b3641552b2c5ac64c86ff29a48ce6b6867712ce1ccad47"
+      "computedHash": "4232992ed9e1426e160081a9e08a4ccd990a7eb5d26840d39da5c241f0431298"
     },
     "ui-fixer": {
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/desktop-automation/ui-fixer/SKILL.md",
-      "computedHash": "62eeab338e12eef3020e490cc2aab09552cdb26326149b2616a1fd67e34a5003"
+      "computedHash": "44f5cb11a78dd69ac6a078ae6d8cd5d3bbedf0fb5ac4e1f50eee89dc93434e6a"
     },
     "uichecker": {
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/desktop-automation/uichecker/SKILL.md",
-      "computedHash": "fe54dbb00ef1e56a4953fce20af5c266c64253477dffe505e83a4d5fc3e87646"
+      "computedHash": "895e1819c67cd3948217432bf8ce2e6b61439ca2c5d8134db92b6e629c3a617b"
     },
     "web-checker": {
       "source": "transmit-bug/agent-compass",
@@ -73,11 +84,22 @@
       "skillPath": "skills/agent-browser/web-smoke/SKILL.md",
       "computedHash": "dae29eb50630816030e616648a06d548910ee35054dbd2419912a82134845d4d"
     },
+    "frontend-design": {
+      "source": "transmit-bug/agent-compass",
+      "sourceType": "github",
+      "skillPath": "skills/frontend/frontend-design/SKILL.md",
+      "computedHash": "237b8ebaf490190cd8797041b0253ff7bc6897c9023570790fa67e2b677aa2df",
+      "upstream": {
+        "repo": "anthropics/claude-plugins-public",
+        "path": "plugins/frontend-design/skills/frontend-design/SKILL.md",
+        "ref": "main"
+      }
+    },
     "logic-test": {
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/logic-test/SKILL.md",
-      "computedHash": "82d87f46f60e61e8dc31a5a82e7726e76e7435aad0c764f5334ed422d117700a"
+      "computedHash": "9252cb7dce764104387ed5f4dd66e2a40016318a2acdf67a1e115e87e9087660"
     }
   }
 }

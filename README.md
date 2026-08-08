@@ -7,6 +7,7 @@ A collection of skills for AI agent workflows, organized by domain:
 - **content-manager** — the context an agent carries into a project (AGENTS.md generation and constraints)
 - **desktop-automation** — desktop-application automation (driving, verifying, and fixing apps through their UI)
 - **agent-browser** — web-application development, testing, maintenance and smoke verification driven by the agent-browser toolset
+- **frontend** — distinctive frontend design guidance plus the agent-browser operation layer (vendor-tracked from upstream)
 - **logic-test** — cross-domain business-logic testing: derive logic from source, generate test cases, run them, classify problems
 
 ## Repository Layout
@@ -14,21 +15,25 @@ A collection of skills for AI agent workflows, organized by domain:
 ```
 agent-compass/
 ├── skills/
-│   ├── content-manager/          # AI 纳入的管理上下文
+│   ├── content-manager/          # context an agent carries in
 │   │   ├── create-agentsmd/
 │   │   ├── multi-agentsmd/
 │   │   └── multi-agentsmd-rules/
-│   ├── desktop-automation/    # 桌面应用自动化（操作/验证/修复）
+│   ├── desktop-automation/    # desktop automation (drive/verify/fix)
 │   │   ├── computer-automation/
 │   │   ├── uichecker/
 │   │   ├── ui-fixer/
 │   │   └── smoke-runner/
-│   └── agent-browser/            # Web 开发/测试/维护/冒烟（structure-first）
-│       ├── web-dev/  web-checker/  web-fixer/
-│       ├── web-smoke/  web-maintain/
-│       ├── scripts/    # agent-browser-run / agent-browser-stale
-│       └── references/ # session-model.md（run 模型契约）
-│   └── logic-test/               # 跨领域：源码 → 业务逻辑 → 用例 → 问题分类
+│   ├── agent-browser/            # web dev/test/maintain/smoke (structure-first)
+│   │   ├── agent-browser/        # operation-layer stub (vendor-tracked from vercel-labs/agent-browser)
+│   │   ├── web-dev/  web-checker/  web-fixer/
+│   │   ├── web-smoke/  web-maintain/
+│   │   ├── scripts/    # agent-browser-run / agent-browser-stale
+│   │   └── references/ # session-model.md (run contract)
+│   ├── frontend/                 # frontend design guidance (vendor-tracked from anthropics/claude-plugins-public)
+│   │   └── frontend-design/
+│   └── logic-test/               # cross-domain: source → logic → cases → triage
+├── scripts/sync-upstream.sh     # check vendored skills against upstream, update on request
 ├── skills-lock.json
 └── README.md
 ```
@@ -38,10 +43,10 @@ so category folders are discovered natively. Each category is a sub-directory; e
 remains a self-contained directory with its own `SKILL.md` (Agent Skills spec compliant).
 
 **Grouped installs**: `.claude-plugin/marketplace.json` (Claude Code plugin-marketplace
-format) declares the four groups — `content-manager`, `desktop-automation`, `agent-browser`,
-`logic-test` — so `npx skills add transmit-bug/agent-compass` shows a collapsible, grouped
-selection and you can install one group at a time (each skill also stays installable by name
-via `--skill <name>`).
+format) declares the five groups — `content-manager`, `desktop-automation`, `agent-browser`,
+`frontend`, `logic-test` — so `npx skills add transmit-bug/agent-compass` shows a collapsible,
+grouped selection and you can install one group at a time (each skill also stays installable
+by name via `--skill <name>`).
 
 ## Installation
 
@@ -108,22 +113,36 @@ commands (`mid.sh start / shot / act / assert / finish`), and an entry in the ca
 
 ### agent-browser — web development & QA
 
-Web-app lifecycle skills driven by the **agent-browser** skill + CLI (external operation
-layer; the run model, storage, and retention contract is shared in
+Web-app lifecycle skills driven by the **agent-browser** skill + CLI (operation layer;
+the run model, storage, and retention contract is shared in
 `references/session-model.md`):
 
+- **agent-browser** — operation-layer discovery stub for the agent-browser CLI (vendor-tracked
+  from `vercel-labs/agent-browser`; by design it never goes stale — it points at
+  `agent-browser skills get core`, which always matches the installed CLI version)
 - **web-dev** — build loop: edit → reload → check structure/errors → iterate to acceptance
 - **web-checker** — judge a rendered page against expected structure (or a reference image) → verdicts
 - **web-fixer** — converge a page to a fixed reference: judge → fix → reload, until the gap list is empty
 - **web-smoke** — verify a defined core flow end-to-end with per-step assertions → PASS/FAIL
 - **web-maintain** — git-driven staleness scan + selective forgetting (tidy)
 
-All five are **user-invoked**. The suite is **structure-first, vision-on-demand**: perception
+The suite is **structure-first, vision-on-demand**: perception
 runs through the DOM/accessibility tree (snapshot → read → eval → console/errors); pixels are
 only for appearance tasks, DOM-less content, and human evidence. Runs anchor to
 worktree+branch+commit under `.agent-browser/` (committed index + gitignored evidence); git is
 the archive and the index forgets by policy, never grows forever. Install the operation layer
 once: `npm i -g agent-browser && agent-browser install`.
+
+### frontend — frontend design guidance
+
+- **frontend-design** — distinctive, intentional visual design for new or reshaped UI
+  (aesthetic direction, typography, layout, avoiding template-default looks). Vendor-tracked
+  from `anthropics/claude-plugins-public` (Apache-2.0); see its `LICENSE.txt`.
+
+**Invocation note**: unlike the other groups, `frontend-design` is **model-invoked** — its
+value is that the agent reaches for it automatically whenever the task involves building or
+reshaping UI. Installing the `frontend` group therefore adds a small amount of routing
+context by design; if you prefer zero context, install it per-project instead.
 
 ## Philosophy
 
@@ -158,11 +177,19 @@ npx skills-ref validate ./skills/desktop-automation/computer-automation
 npx skills-ref validate ./skills/desktop-automation/uichecker
 npx skills-ref validate ./skills/desktop-automation/ui-fixer
 npx skills-ref validate ./skills/desktop-automation/smoke-runner
+npx skills-ref validate ./skills/agent-browser/agent-browser
 npx skills-ref validate ./skills/agent-browser/web-dev
 npx skills-ref validate ./skills/agent-browser/web-checker
 npx skills-ref validate ./skills/agent-browser/web-fixer
 npx skills-ref validate ./skills/agent-browser/web-smoke
 npx skills-ref validate ./skills/agent-browser/web-maintain
+npx skills-ref validate ./skills/frontend/frontend-design
+```
+
+To check vendored skills against their upstream sources:
+
+```bash
+./scripts/sync-upstream.sh --check
 ```
 
 ## License
