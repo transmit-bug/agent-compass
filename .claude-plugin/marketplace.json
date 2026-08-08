@@ -4,7 +4,8 @@
       "name": "content-manager",
       "source": "./",
       "skills": [
-        "./skills/content-manager/agentsmd"
+        "./skills/content-manager/agentsmd",
+        "./skills/content-manager/readmemd"
       ]
     },
     {

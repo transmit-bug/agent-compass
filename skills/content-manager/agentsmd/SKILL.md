@@ -35,11 +35,7 @@ Create `AGENTS.md` at the repository root, following the guidance at <https://ag
 
 ### Key principles
 
-- **Agent-focused**: detailed technical instructions for automated tools
-- **Complements README.md**: adds agent-specific context, doesn't replace human docs
 - **Standardized location**: repository root (or subproject roots for monorepos)
-- **Open format**: standard Markdown with flexible structure
-- **Ecosystem compatibility**: works across 20+ AI coding tools (Cursor, Aider, Gemini CLI, ...)
 
 ### Essential sections
 
@@ -65,52 +61,12 @@ Create `AGENTS.md` at the repository root, following the guidance at <https://ag
 1. **Analyze the project**: languages/frameworks, package managers, testing frameworks,
    architecture (monorepo vs single package)
 2. **Identify key workflows**: `package.json` scripts, Makefile, CI/CD config, docs
-3. **Write the sections that match the content** — no fixed template; include specific,
-   actionable commands an agent can run directly
+3. **Write the sections that match the content** — no fixed template; commands are brief,
+   exact reminders of the important ones — the agent reads `package.json`, `Makefile`, and
+   CI config itself
 4. **Test the instructions**: every command should actually work
-5. **Keep it focused** on what agents need to know, not general project information
-
-### Example template
-
-Customize, don't fill in blindly — only keep sections the project actually has:
-
-```markdown
-# AGENTS.md
-
-## Project Overview
-
-[Brief description of the project, its purpose, and key technologies]
-
-## Setup Commands
-
-- Install dependencies: `[package manager] install`
-- Start development server: `[command]`
-- Build for production: `[command]`
-
-## Testing Instructions
-
-- Run all tests: `[command]`
-- Run unit tests: `[command]`
-- Run integration tests: `[command]`
-- [Specific testing patterns or requirements]
-
-## Code Style
-
-- [Language and framework conventions]
-- [Linting rules and commands]
-- [File organization patterns]
-
-## Build and Deployment
-
-- [Build process details]
-- [Output directories]
-- [Deployment commands]
-
-## Pull Request Guidelines
-
-- Title format: [component] Brief description
-- Required checks: `[lint command]`, `[test command]`
-```
+5. **Cut what wouldn't confuse an agent**: every line is a command an agent can run or a
+   fact an agent would get wrong if untold — nothing more
 
 ### Working example (from agents.md)
 
@@ -153,18 +109,19 @@ The closest AGENTS.md to a file takes precedence.
 
 ### Step 1: Analyze the directory
 
-Read the entry point, one representative module, one test file, and config files. Find what's
-non-obvious — the things an agent would get wrong without being told.
+Read the entry point, one representative module, one test file, and config files. Find what
+would confuse an agent.
 
 ### Step 2: Pick what belongs
 
-Describe patterns, not instances. Cut what's obvious. Cut what the parent already covers.
-Don't create a file for a directory that's obvious.
+Describe patterns, not instances. Skip what the parent already covers. Only create a file
+when a directory has something that would confuse an agent.
 
 ### Step 3: Write
 
-Pick sections that match the content — no fixed template: Architecture / Tests / Domain tools
-/ Conventions / Gotchas / Key modules / Data model. Only what's relevant.
+Pick sections that match the content: Architecture / Tests / Domain tools / Conventions /
+Gotchas / Key modules / Data model — only what's relevant. Done when everything that would
+confuse an agent about this directory is written down, and nothing else.
 
 ### Example
 
@@ -214,7 +171,5 @@ If the AGENTS.md doesn't exist yet for that directory, create it with just the r
 
 ## General notes
 
-- AGENTS.md is living documentation — update it as the project evolves
 - Be specific: exact commands, not vague descriptions; wrap commands in backticks
 - Include context: explain *why* certain steps are needed, not just what to run
-- Don't restate what's obvious from the code — agents read the code

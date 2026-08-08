@@ -4,7 +4,7 @@
 
 A collection of skills for AI agent workflows, organized by domain:
 
-- **content-manager** — the context an agent carries into a project (AGENTS.md generation and constraints)
+- **content-manager** — the context an agent carries into a project (AGENTS.md + README authoring)
 - **desktop-automation** — desktop-application automation (driving, verifying, and fixing apps through their UI)
 - **agent-browser** — web-application development, testing, maintenance and smoke verification driven by the agent-browser toolset
 - **frontend** — distinctive frontend design guidance plus the agent-browser operation layer (vendor-tracked from upstream)
@@ -16,7 +16,8 @@ A collection of skills for AI agent workflows, organized by domain:
 agent-compass/
 ├── skills/
 │   ├── content-manager/          # context an agent carries in
-│   │   └── agentsmd/             # root | layered | rules — one skill, three modes
+│   │   ├── agentsmd/             # root | layered | rules — one skill, three modes
+│   │   └── readmemd/              # create | refresh | trim — the stranger's front door
 │   ├── desktop-automation/    # desktop automation (drive/verify/fix)
 │   │   ├── computer-automation/
 │   │   ├── uichecker/
@@ -63,12 +64,13 @@ npx skills add transmit-bug/agent-compass --skill computer-automation --skill ui
 
 ### content-manager — the context an agent carries in
 
-Skills for building agent-readable project context. One skill, three modes: root-level,
-directory-level (layered), and rule-level instructions.
+Skills for building project context: AGENTS.md carries agent instructions, README.md carries
+what a human needs. Each is one skill with three modes.
 
 | Skill | Description |
 |-------|-------------|
 | [agentsmd](./skills/content-manager/agentsmd/) | Author AGENTS.md in three modes — **root** (repository-level file), **layered** (per-directory files for monorepos), **rules** (user constraints/guardrails). Argument: `root \| layered \| rules` |
+| [readmemd](./skills/content-manager/readmemd/) | Author README.md in three modes — **create** (from scratch), **refresh** (stale → current), **trim** (sediment → gone). Argument: `create \| refresh \| trim` |
 
 ### desktop-automation — desktop-application automation
 
@@ -148,6 +150,8 @@ Each skill focuses on a specific aspect of building agent-readable project conte
 
 - **agentsmd**: AGENTS.md authoring — root-level context (setup, testing, deployment), directory-level
   architecture (layered), and user-defined constraints (rules), one skill with three modes
+- **readmemd**: README.md authoring — the front door for a stranger: create / refresh / trim, one skill
+  with three modes
 
 ## Supported Agents
 
@@ -166,6 +170,7 @@ To validate skills locally:
 
 ```bash
 npx skills-ref validate ./skills/content-manager/agentsmd
+npx skills-ref validate ./skills/content-manager/readmemd
 npx skills-ref validate ./skills/desktop-automation/computer-automation
 npx skills-ref validate ./skills/desktop-automation/uichecker
 npx skills-ref validate ./skills/desktop-automation/ui-fixer
