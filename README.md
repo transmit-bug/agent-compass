@@ -37,6 +37,12 @@ agent-compass/
 so category folders are discovered natively. Each category is a sub-directory; every skill
 remains a self-contained directory with its own `SKILL.md` (Agent Skills spec compliant).
 
+**Grouped installs**: `.claude-plugin/marketplace.json` (Claude Code plugin-marketplace
+format) declares the four groups — `content-manager`, `desktop-automation`, `agent-browser`,
+`logic-test` — so `npx skills add transmit-bug/agent-compass` shows a collapsible, grouped
+selection and you can install one group at a time (each skill also stays installable by name
+via `--skill <name>`).
+
 ## Installation
 
 ```bash

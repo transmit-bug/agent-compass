@@ -1,0 +1,41 @@
+{
+  "plugins": [
+    {
+      "name": "content-manager",
+      "source": "./",
+      "skills": [
+        "./skills/content-manager/create-agentsmd",
+        "./skills/content-manager/multi-agentsmd",
+        "./skills/content-manager/multi-agentsmd-rules"
+      ]
+    },
+    {
+      "name": "desktop-automation",
+      "source": "./",
+      "skills": [
+        "./skills/desktop-automation/computer-automation",
+        "./skills/desktop-automation/smoke-runner",
+        "./skills/desktop-automation/ui-fixer",
+        "./skills/desktop-automation/uichecker"
+      ]
+    },
+    {
+      "name": "agent-browser",
+      "source": "./",
+      "skills": [
+        "./skills/agent-browser/web-checker",
+        "./skills/agent-browser/web-dev",
+        "./skills/agent-browser/web-fixer",
+        "./skills/agent-browser/web-maintain",
+        "./skills/agent-browser/web-smoke"
+      ]
+    },
+    {
+      "name": "logic-test",
+      "source": "./",
+      "skills": [
+        "./skills/logic-test"
+      ]
+    }
+  ]
+}
