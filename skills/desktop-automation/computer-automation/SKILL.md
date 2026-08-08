@@ -1,7 +1,7 @@
 ---
 name: computer-automation
 description: |
-  Operation layer of the computeruse group: Midscene desktop automation — persistent session
+  Operation layer of the desktop-automation group: Midscene desktop automation — persistent session
   daemon, diff-gated screenshots, archived reports. Drives the local desktop
   (macOS/Windows/Linux) or a remote Windows host over RDP. ⚠️ Takes over the real mouse and
   keyboard in local mode.
