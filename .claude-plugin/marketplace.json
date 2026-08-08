@@ -27,7 +27,8 @@
         "./skills/agent-browser/web-dev",
         "./skills/agent-browser/web-fixer",
         "./skills/agent-browser/web-maintain",
-        "./skills/agent-browser/web-smoke"
+        "./skills/agent-browser/web-smoke",
+        "./skills/agent-browser/logic-test"
       ]
     },
     {
@@ -36,15 +37,6 @@
       "skills": [
         "./skills/frontend/frontend-design",
         "./skills/agent-browser/agent-browser"
-      ]
-    },
-    {
-      "name": "logic-test",
-      "source": "./",
-      "skills": [
-        "./skills/logic-test",
-        "./skills/agent-browser/agent-browser",
-        "./skills/desktop-automation/computer-automation"
       ]
     }
   ]

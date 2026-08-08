@@ -1,4 +1,4 @@
-# agent-browser — web-app development / testing / maintenance / smoke
+# agent-browser — web-app development / testing / maintenance / smoke / logic
 
 Suite of user-invoked skills for the web-app lifecycle, driven by the **agent-browser**
 skill + CLI — the operation layer (external, referenced not vendored:
@@ -13,6 +13,7 @@ skill + CLI — the operation layer (external, referenced not vendored:
 | Fix until it matches a reference | [web-fixer](./web-fixer/) |
 | End-to-end core-flow verification | [web-smoke](./web-smoke/) |
 | Verify staleness / re-run / tidy | [web-maintain](./web-maintain/) |
+| Infer logic, generate cases, run, classify | [logic-test](./logic-test/) |
 
 ## Run model (summary)
 
@@ -38,6 +39,7 @@ business layers (user-invoked)                    operation layer (external)
 │  web-fixer    fix loop       │                  │    skills get core (ref)     │
 │  web-smoke    flow verify    │                  └─────────────────────────────┘
 │  web-maintain staleness/forget│
+│  logic-test   logic testing  │
 └──────────┬───────────────────┘
            │ shared
            ▼
@@ -46,7 +48,7 @@ business layers (user-invoked)                    operation layer (external)
    references/session-model.md (contract)
 ```
 
-All five skills are user-invoked (`disable-model-invocation: true`, zero context
+All six skills are user-invoked (`disable-model-invocation: true`, zero context
 load) — call them by name when needed; this README is the human routing index.
 Judgment stays with the agent, deterministic computation goes into scripts, and command
 details always come from `agent-browser skills get core` (the CLI is the reference,
@@ -57,7 +59,7 @@ never stale).
 ```bash
 npm i -g agent-browser && agent-browser install   # operation layer (one-time)
 npx skills add transmit-bug/agent-compass --skill web-smoke --skill web-checker \
-  --skill web-fixer --skill web-dev --skill web-maintain
+  --skill web-fixer --skill web-dev --skill web-maintain --skill logic-test
 ```
 
 Extending: a new web workflow = a new `<name>/SKILL.md` in this directory

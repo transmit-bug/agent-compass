@@ -6,9 +6,8 @@ A collection of skills for AI agent workflows, organized by domain:
 
 - **content-manager** — the context an agent carries into a project (AGENTS.md + README authoring)
 - **desktop-automation** — desktop-application automation (driving, verifying, and fixing apps through their UI)
-- **agent-browser** — web-application development, testing, maintenance and smoke verification driven by the agent-browser toolset
+- **agent-browser** — web-application development, testing, maintenance, smoke and logic verification driven by the agent-browser toolset
 - **frontend** — distinctive frontend design guidance plus the agent-browser operation layer (vendor-tracked from upstream)
-- **logic-test** — cross-domain business-logic testing: derive logic from source, generate test cases, run them, classify problems
 
 ## Repository Layout
 
@@ -23,15 +22,14 @@ agent-compass/
 │   │   ├── uichecker/
 │   │   ├── ui-fixer/
 │   │   └── smoke-runner/
-│   ├── agent-browser/            # web dev/test/maintain/smoke (structure-first)
+│   ├── agent-browser/            # web dev/test/maintain/smoke/logic (structure-first)
 │   │   ├── agent-browser/        # operation-layer stub (vendor-tracked from vercel-labs/agent-browser)
 │   │   ├── web-dev/  web-checker/  web-fixer/
-│   │   ├── web-smoke/  web-maintain/
+│   │   ├── web-smoke/  web-maintain/  logic-test/
 │   │   ├── scripts/    # agent-browser-run / agent-browser-stale
 │   │   └── references/ # session-model.md (run contract)
 │   ├── frontend/                 # frontend design guidance (vendor-tracked from anthropics/claude-plugins-public)
 │   │   └── frontend-design/
-│   └── logic-test/               # cross-domain: source → logic → cases → triage
 ├── scripts/sync-upstream.sh     # check vendored skills against upstream, update on request
 ├── skills-lock.json
 └── README.md
@@ -42,8 +40,8 @@ so category folders are discovered natively. Each category is a sub-directory; e
 remains a self-contained directory with its own `SKILL.md` (Agent Skills spec compliant).
 
 **Grouped installs**: `.claude-plugin/marketplace.json` (Claude Code plugin-marketplace
-format) declares the five groups — `content-manager`, `desktop-automation`, `agent-browser`,
-`frontend`, `logic-test` — so `npx skills add transmit-bug/agent-compass` shows a collapsible,
+format) declares the four groups — `content-manager`, `desktop-automation`, `agent-browser`,
+`frontend` — so `npx skills add transmit-bug/agent-compass` shows a collapsible,
 grouped selection and you can install one group at a time (each skill also stays installable
 by name via `--skill <name>`).
 
@@ -123,6 +121,7 @@ the run model, storage, and retention contract is shared in
 - **web-fixer** — converge a page to a fixed reference: judge → fix → reload, until the gap list is empty
 - **web-smoke** — verify a defined core flow end-to-end with per-step assertions → PASS/FAIL
 - **web-maintain** — git-driven staleness scan + selective forgetting (tidy)
+- **logic-test** — infer business logic from source, generate test cases, run them on the app, classify problems three ways (implementation mismatch / logic flaw / wrong inference)
 
 The suite is **structure-first, vision-on-demand**: perception
 runs through the DOM/accessibility tree (snapshot → read → eval → console/errors); pixels are
@@ -141,27 +140,6 @@ once: `npm i -g agent-browser && agent-browser install`.
 value is that the agent reaches for it automatically whenever the task involves building or
 reshaping UI. Installing the `frontend` group therefore adds a small amount of routing
 context by design; if you prefer zero context, install it per-project instead.
-
-### logic-test — cross-domain business-logic testing
-
-- **logic-test** — infer business logic from source, generate test cases, run them on the
-  real app, and classify problems three ways (implementation mismatch / logic flaw /
-  wrong inference). Cross-domain: the execution channel branches at the last step — web
-  via `agent-browser`, desktop via `computer-automation`, backend via plain Bash.
-
-**Dependencies**: the install group bundles both execution channels so it works out of the
-box — installing the `logic-test` group also installs the `agent-browser` operation stub
-and the `computer-automation` session skill.
-
-```bash
-npx skills add transmit-bug/agent-compass   # pick the logic-test group
-```
-
-Testing backends only (plain Bash, no channel needed)? Install just the skill:
-
-```bash
-npx skills add transmit-bug/agent-compass --skill logic-test
-```
 
 ## Philosophy
 

@@ -9,30 +9,17 @@ allowed-tools:
 
 # Logic Test
 
-Business-logic testing for apps that have source code: read the code and page copy,
+Business-logic testing for web apps that have source code: read the code and page copy,
 infer the business logic, generate test cases from that logic, execute them one by one
-on the real running app, and finally classify and report the problems found. **Does not
-change code** — it only tests and reports.
-
-Applies to: web apps (driven by agent-browser), desktop apps (driven by
-computer-automation), and pure backends or CLIs (plain Bash). The execution channel is
-a branch taken at the last step; the first four steps are domain-independent.
+on the running app, and finally classify and report the problems found. It only tests
+and reports — it never changes code.
 
 ## Dependencies
 
-The logic-test install group bundles both execution channels (`agent-browser` and
-`computer-automation`) — install the group; for backend-only work, logic-test alone
-suffices.
-
-- Execution channel (pick one by app type):
-  - **Web**: `agent-browser` (`npm i -g agent-browser && agent-browser install`), command
-    surface `agent-browser skills get core`
-  - **Desktop**: the `computer-automation` skill's mid.sh session commands
-    (`start / act / assert / finish`)
-  - **Backend / CLI**: plain Bash
-- Run records (optional): the `agent-browser-run` script from the agent-browser suite,
-  model per `skills/agent-browser/references/session-model.md` — runs fine without it,
-  you just lose traceability
+Driven by the agent-browser operation layer (`npm i -g agent-browser && agent-browser
+install`, command surface `agent-browser skills get core`). Run records (optional):
+the `agent-browser-run` script (`../scripts/agent-browser-run`), model per
+`../references/session-model.md` — runs fine without it, you just lose traceability.
 
 ## Steps
 
@@ -59,14 +46,11 @@ suffices.
    *Done when: every entry in the checklist has cases and both sides of every branch
    are covered.*
 
-3. **Run the cases.** Execute one by one:
-   - **Web**: driven by agent-browser; assert structurally (`snapshot -i` / `read` /
-     `get count` / `eval` / `wait --text`); screenshots only for "judging appearance"
-     or "leaving evidence"
-   - **Desktop**: `act` / `assert` from mid.sh
-   - **Backend / CLI**: run commands, compare output and exit codes
-   Record per case: action, actual result, expected, pass / fail. Reusable cases are
-   saved as recipe files (`.agent-browser/flows/<name>.md`).
+3. **Run the cases.** Execute one by one, driven by agent-browser; assert structurally
+   (`snapshot -i` / `read` / `get count` / `eval` / `wait --text`); screenshots only
+   for "judging appearance" or "leaving evidence". Record per case: action, actual
+   result, expected, pass / fail. Reusable cases are saved as recipe files
+   (`.agent-browser/flows/<name>.md`).
    *Done when: all cases have been executed and each has a result record.*
 
 4. **Analyze the problems.** Classify each failing or anomalous case into three
@@ -80,13 +64,15 @@ suffices.
    source location, "logic flaw" entries state where the flaw is.*
 
 5. **Report.** Organize by the three categories, each problem carrying evidence: case,
-   action steps, expected, actual, screenshot or structural snapshot path. The report
-   never ends silently — give a conclusion, evidence, and a recommended next step.
+   action steps, expected, actual, screenshot or structural snapshot path. End with a
+   conclusion and a recommended next step.
+   *Done when: every problem is classified with its evidence attached, and the report
+   ends with a conclusion and a recommended next step.*
 
 ## Reference
 
 - **Assertion semantics**: pass = the expectation can be verified by a structural
-  assertion; when the expectation is vague, give evidence and ask the user — don't guess.
+  assertion; when the expectation is vague, give evidence and ask the user.
 - **Classification boundary**: when unsure between "implementation mismatch" and "logic
   flaw", find the corresponding branch in the source — the branch exists but the
   behavior deviates is the former; the branch or boundary simply doesn't exist is the
@@ -96,7 +82,7 @@ suffices.
 
 ## Boundaries
 
-- No code changes: fixing problems uses `web-fixer` (web) or `ui-fixer` (desktop).
+- No code changes: fixing problems uses `web-fixer`.
 - Irreversible actions (submit / delete / overwrite) — ask the user first.
 - Sensitive content stays out of screenshots; auth goes through agent-browser's auth
-  vault, never paste credentials.
+  vault.
