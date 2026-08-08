@@ -5,7 +5,7 @@
 A collection of skills for AI agent workflows, organized by domain:
 
 - **content-manager** — the context an agent carries into a project (AGENTS.md generation and constraints)
-- **computer-vision** — multimodal-vision-driven UI automation (desktop app testing & fixing)
+- **desktop-automation** — desktop-application automation (driving, verifying, and fixing apps through their UI)
 - **agent-browser** — *(reserved)* web-application development, testing, maintenance and smoke verification driven by the agent-browser toolset
 
 ## Repository Layout
@@ -17,7 +17,7 @@ agent-compass/
 │   │   ├── create-agentsmd/
 │   │   ├── multi-agentsmd/
 │   │   └── multi-agentsmd-rules/
-│   ├── computer-vision/          # 多模态识别 + UI 自动化
+│   ├── desktop-automation/    # 桌面应用自动化（操作/验证/修复）
 │   │   ├── computer-automation/
 │   │   ├── uichecker/
 │   │   ├── ui-fixer/
@@ -57,7 +57,7 @@ Skills for building agent-readable project context: root-level, directory-level,
 | [multi-agentsmd](./skills/content-manager/multi-agentsmd/) | Generate layered AGENTS.md for structured projects with sub-directories |
 | [multi-agentsmd-rules](./skills/content-manager/multi-agentsmd-rules/) | Add user-defined rules and constraints to AGENTS.md files |
 
-### computer-vision — multimodal UI automation
+### desktop-automation — desktop-application automation
 
 Vision-driven desktop control (Midscene) split into two layers, with one-way, explicit dependencies:
 
@@ -88,7 +88,7 @@ computer-automation, check the export dialog", "ui-fixer + computer-automation, 
 match this image", "smoke-runner + computer-automation, verify the export flow".
 
 **Extending the group**: a new business workflow is a new `<category>/<name>/SKILL.md` under
-`skills/computer-vision/` with `disable-model-invocation: true`, a `## Dependencies` section
+`skills/desktop-automation/` with `disable-model-invocation: true`, a `## Dependencies` section
 naming `computer-automation` (the user loads both by name), steps written against the session
 commands (`mid.sh start / shot / act / assert / finish`), and an entry in the category table +
 `skills-lock.json`. Keep the layers clean: the business skill decides *what* and *when*;
@@ -128,10 +128,10 @@ To validate skills locally:
 npx skills-ref validate ./skills/content-manager/create-agentsmd
 npx skills-ref validate ./skills/content-manager/multi-agentsmd
 npx skills-ref validate ./skills/content-manager/multi-agentsmd-rules
-npx skills-ref validate ./skills/computer-vision/computer-automation
-npx skills-ref validate ./skills/computer-vision/uichecker
-npx skills-ref validate ./skills/computer-vision/ui-fixer
-npx skills-ref validate ./skills/computer-vision/smoke-runner
+npx skills-ref validate ./skills/desktop-automation/computer-automation
+npx skills-ref validate ./skills/desktop-automation/uichecker
+npx skills-ref validate ./skills/desktop-automation/ui-fixer
+npx skills-ref validate ./skills/desktop-automation/smoke-runner
 ```
 
 ## License

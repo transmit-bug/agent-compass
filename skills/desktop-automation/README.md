@@ -1,7 +1,7 @@
-# computer-vision — 多模态识别 + UI 自动化
+# desktop-automation — 桌面应用自动化
 
-Vision-driven desktop UI automation (Midscene), split into an operation layer and business
-layers with one-way dependencies.
+Drive, verify, and fix desktop applications through their UI. Vision-driven (Midscene),
+split into an operation layer and business layers with one-way dependencies.
 
 | Skill | Layer | What it does |
 |-------|-------|--------------|
@@ -12,4 +12,5 @@ layers with one-way dependencies.
 
 Business skills depend on `computer-automation` and are user-invoked
 (`disable-model-invocation: true`). New workflows built on the session commands
-(`mid.sh start / shot / act / assert / finish`) belong in this category.
+(`mid.sh start / shot / act / assert / finish`) belong in this category — check, fix,
+smoke, and future automated testing.
