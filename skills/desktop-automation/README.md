@@ -1,4 +1,4 @@
-# desktop-automation — 桌面应用自动化
+# desktop-automation — desktop-application automation
 
 Drive, verify, and fix desktop applications through their UI. Vision-driven (Midscene),
 split into an operation layer and business layers with one-way dependencies.

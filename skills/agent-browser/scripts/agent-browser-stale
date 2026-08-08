@@ -70,13 +70,13 @@ def save_md(path, lines):
 
 def render_index_md(index):
     runs = sorted(index.get("runs", []), key=lambda r: r.get("startedAt", ""), reverse=True)
-    lines = ["# Agent Browser · 验证索引", ""]
+    lines = ["# Agent Browser · Verification Index", ""]
     if not runs:
-        lines.append("（暂无运行记录）")
+        lines.append("(no runs recorded)")
         save_md(INDEX_MD, lines)
         return
-    lines.append("## 当前验证状态")
-    lines.append("| flow | skill | 最近验证 | commit | 裁决 | 状态 |")
+    lines.append("## Current Verification Status")
+    lines.append("| flow | skill | last verified | commit | verdict | status |")
     lines.append("|---|---|---|---|---|---|")
     seen = set()
     for r in runs:
@@ -91,8 +91,8 @@ def render_index_md(index):
             f"{r.get('commit','-')[:8]} | {r.get('verdict','-')} | {stale} {r.get('status','')} |"
         )
     lines.append("")
-    lines.append("## 最近运行")
-    lines.append("| 时间 | flow | skill | commit | 裁决 | 状态 |")
+    lines.append("## Recent Runs")
+    lines.append("| time | flow | skill | commit | verdict | status |")
     lines.append("|---|---|---|---|---|---|")
     for r in runs[:20]:
         stamp = r.get("finishedAt") or r.get("startedAt") or "-"
