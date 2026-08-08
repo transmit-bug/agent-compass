@@ -72,6 +72,12 @@
       "sourceType": "github",
       "skillPath": "skills/agent-browser/web-smoke/SKILL.md",
       "computedHash": "dae29eb50630816030e616648a06d548910ee35054dbd2419912a82134845d4d"
+    },
+    "logic-test": {
+      "source": "transmit-bug/agent-compass",
+      "sourceType": "github",
+      "skillPath": "skills/logic-test/SKILL.md",
+      "computedHash": "82d87f46f60e61e8dc31a5a82e7726e76e7435aad0c764f5334ed422d117700a"
     }
   }
 }

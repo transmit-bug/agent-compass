@@ -7,6 +7,7 @@ A collection of skills for AI agent workflows, organized by domain:
 - **content-manager** — the context an agent carries into a project (AGENTS.md generation and constraints)
 - **desktop-automation** — desktop-application automation (driving, verifying, and fixing apps through their UI)
 - **agent-browser** — web-application development, testing, maintenance and smoke verification driven by the agent-browser toolset
+- **logic-test** — cross-domain business-logic testing: derive logic from source, generate test cases, run them, classify problems
 
 ## Repository Layout
 
@@ -27,6 +28,7 @@ agent-compass/
 │       ├── web-smoke/  web-maintain/
 │       ├── scripts/    # agent-browser-run / agent-browser-stale
 │       └── references/ # session-model.md（run 模型契约）
+│   └── logic-test/               # 跨领域：源码 → 业务逻辑 → 用例 → 问题分类
 ├── skills-lock.json
 └── README.md
 ```
