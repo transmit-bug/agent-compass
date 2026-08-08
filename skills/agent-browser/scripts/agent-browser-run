@@ -1,0 +1,328 @@
+#!/usr/bin/env python3
+"""agent-browser-run — run lifecycle for the agent-browser skill suite.
+
+Operates on .agent-browser/ in the app repo cwd. Computes and stores only;
+decisions belong to the agent. Contract: references/session-model.md.
+"""
+import argparse
+import datetime
+import json
+import os
+import shutil
+import subprocess
+import sys
+
+BASE = ".agent-browser"
+RUNS = os.path.join(BASE, "runs")
+INDEX_JSON = os.path.join(BASE, "index.json")
+INDEX_MD = os.path.join(BASE, "index.md")
+
+
+def now_iso():
+    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def git(args, cwd=None):
+    return subprocess.run(["git"] + args, capture_output=True, text=True, cwd=cwd)
+
+
+def load_json(path, default):
+    if os.path.exists(path):
+        with open(path) as f:
+            return json.load(f)
+    return default
+
+
+def save_json(path, data):
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+
+
+def run_dir(app, slug):
+    return os.path.join(RUNS, app, slug)
+
+
+def run_path(app, slug):
+    return os.path.join(run_dir(app, slug), "run.json")
+
+
+def overall_verdict(checkpoints):
+    v = [c.get("verdict") for c in checkpoints]
+    if any(x == "fail" for x in v):
+        return "fail"
+    if any(x == "unsure" for x in v):
+        return "unsure"
+    return "pass" if v else "-"
+
+
+def save_md(path, lines):
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    with open(path, "w") as f:
+        f.write("\n".join(lines))
+
+
+def render_index_md(index):
+    runs = sorted(index.get("runs", []), key=lambda r: r.get("startedAt", ""), reverse=True)
+    lines = ["# Agent Browser · 验证索引", ""]
+    if not runs:
+        lines.append("（暂无运行记录）")
+        save_md(INDEX_MD, lines)
+        return
+    lines.append("## 当前验证状态")
+    lines.append("| flow | skill | 最近验证 | commit | 裁决 | 状态 |")
+    lines.append("|---|---|---|---|---|---|")
+    seen = set()
+    for r in runs:
+        key = (r["app"], r["slug"])
+        if key in seen:
+            continue
+        seen.add(key)
+        stamp = r.get("finishedAt") or r.get("startedAt") or "-"
+        stale = "stale" if r.get("stale") else ""
+        lines.append(
+            f"| {r['slug']} | {r.get('skill','-')} | {stamp[:16]} | "
+            f"{r.get('commit','-')[:8]} | {r.get('verdict','-')} | {stale} {r.get('status','')} |"
+        )
+    lines.append("")
+    lines.append("## 最近运行")
+    lines.append("| 时间 | flow | skill | commit | 裁决 | 状态 |")
+    lines.append("|---|---|---|---|---|---|")
+    for r in runs[:20]:
+        stamp = r.get("finishedAt") or r.get("startedAt") or "-"
+        lines.append(
+            f"| {stamp[:16]} | {r['slug']} | {r.get('skill','-')} | {r.get('commit','-')[:8]} "
+            f"| {r.get('verdict','-')} | {r.get('status','')} |"
+        )
+    save_md(INDEX_MD, lines)
+
+
+def load_index():
+    return load_json(INDEX_JSON, {"runs": []})
+
+
+def save_index(index):
+    save_json(INDEX_JSON, index)
+    render_index_md(index)
+
+
+def repo_info():
+    top = git(["rev-parse", "--show-toplevel"])
+    worktree = top.stdout.strip() if top.returncode == 0 else os.getcwd()
+    branch = git(["branch", "--show-current"]).stdout.strip()
+    commit = git(["rev-parse", "HEAD"]).stdout.strip()
+    return {"worktree": worktree, "branch": branch or "(detached)", "commit": commit or "unknown"}
+
+
+def cmd_start(args):
+    slug = f"{args.app}-{args.flow}"
+    info = repo_info()
+    run_id = f"{slug}@{now_iso()}"
+    d = run_dir(args.app, args.flow)
+    os.makedirs(os.path.join(d, "structure"), exist_ok=True)
+    os.makedirs(os.path.join(d, "shots"), exist_ok=True)
+    os.makedirs(os.path.join(d, "traces"), exist_ok=True)
+    run = {
+        "id": run_id,
+        "app": args.app,
+        "slug": args.flow,
+        "skill": args.skill or "unknown",
+        "worktree": info["worktree"],
+        "branch": info["branch"],
+        "commit": info["commit"],
+        "status": "running",
+        "startedAt": now_iso(),
+        "finishedAt": None,
+        "checkpoints": [],
+        "supersededBy": None,
+        "stale": None,
+    }
+    save_json(run_path(args.app, args.flow), run)
+
+    index = load_index()
+    # supersede the previous complete run of the same app+slug
+    for r in index["runs"]:
+        if r["app"] == args.app and r["slug"] == args.flow and r["status"] == "complete" and not r.get("supersededBy"):
+            r["supersededBy"] = run_id
+    index["runs"].append({
+        "id": run_id, "app": args.app, "slug": args.flow, "skill": run["skill"],
+        "branch": run["branch"], "commit": run["commit"], "status": "running",
+        "startedAt": run["startedAt"], "finishedAt": None, "verdict": "-",
+        "stale": None, "supersededBy": None,
+    })
+    save_index(index)
+    print(json.dumps({"runId": run_id, "dir": d}, ensure_ascii=False))
+
+
+def cmd_checkpoint(args):
+    try:
+        cp = json.loads(args.json)
+    except json.JSONDecodeError:
+        sys.exit("checkpoint --json must be valid JSON")
+    if not isinstance(cp, dict) or "step" not in cp or "verdict" not in cp:
+        sys.exit("checkpoint --json needs at least {step, verdict}")
+    path = run_path(args.app, args.flow)
+    run = load_json(path, None)
+    if not run:
+        sys.exit(f"no run for {args.app}/{args.flow} — start it first")
+    if run["status"] != "running":
+        sys.exit(f"run {run['id']} is {run['status']} — start a new run")
+    cp.setdefault("recordedAt", now_iso())
+    cp.setdefault("method", "-")
+    cp.setdefault("expected", "-")
+    cp.setdefault("actual", "-")
+    cp.setdefault("evidence", "-")
+    run["checkpoints"].append(cp)
+    save_json(path, run)
+
+    index = load_index()
+    for r in index["runs"]:
+        if r["id"] == run["id"]:
+            r["verdict"] = overall_verdict(run["checkpoints"])
+    save_index(index)
+    print(json.dumps({"runId": run["id"], "checkpoints": len(run["checkpoints"]),
+                      "verdict": overall_verdict(run["checkpoints"])}, ensure_ascii=False))
+
+
+def render_report(run):
+    lines = [f"# Report · {run['app']} · {run['slug']}", ""]
+    lines.append(f"- skill: {run['skill']}")
+    lines.append(f"- branch: {run['branch']}  commit: {run['commit'][:8]}")
+    lines.append(f"- started: {run['startedAt']}  finished: {run.get('finishedAt') or '-'}")
+    lines.append(f"- status: {run['status']}  verdict: {overall_verdict(run['checkpoints'])}")
+    lines.append("")
+    lines.append("## Checkpoints")
+    lines.append("| step | method | expected | actual | verdict | evidence |")
+    lines.append("|---|---|---|---|---|---|")
+    for c in run["checkpoints"]:
+        lines.append(f"| {c['step']} | {c['method']} | {c['expected']} | {c['actual']} | {c['verdict']} | {c['evidence']} |")
+    if run.get("stale"):
+        s = run["stale"]
+        lines.append("")
+        lines.append(f"## Stale: {s.get('reason')} (detected at {s.get('detectedAt')})")
+    lines.append("")
+    lines.append("Report never ends silently.")
+    return "\n".join(lines)
+
+
+def cmd_finish(args):
+    path = run_path(args.app, args.flow)
+    run = load_json(path, None)
+    if not run:
+        sys.exit(f"no run for {args.app}/{args.flow} — start it first")
+    run["status"] = args.status
+    run["finishedAt"] = now_iso()
+    save_json(path, run)
+
+    index = load_index()
+    for r in index["runs"]:
+        if r["id"] == run["id"]:
+            r["status"] = run["status"]
+            r["finishedAt"] = run["finishedAt"]
+            r["verdict"] = overall_verdict(run["checkpoints"]) if args.status == "complete" else "-"
+    save_index(index)
+
+    report = render_report(run)
+    report_path = os.path.join(run_dir(args.app, args.flow), "report.md")
+    with open(report_path, "w") as f:
+        f.write(report)
+    print(json.dumps({"runId": run["id"], "status": run["status"],
+                      "verdict": overall_verdict(run["checkpoints"]),
+                      "report": report_path}, ensure_ascii=False))
+
+
+def cmd_ls(args):
+    index = load_index()
+    runs = sorted(index["runs"], key=lambda r: r.get("startedAt", ""), reverse=True)
+    for r in runs:
+        if args.app and r["app"] != args.app:
+            continue
+        stale = " [stale]" if r.get("stale") else ""
+        print(f"{r['id']}  {r['status']:<8} {r.get('verdict','-'):<6} {r['slug']}  ({r.get('skill','-')}){stale}")
+
+
+def cmd_show(args):
+    if os.path.isdir(RUNS):
+        for app in os.listdir(RUNS):
+            for flow in os.listdir(os.path.join(RUNS, app)):
+                if flow == args.slug:
+                    path = run_path(app, flow)
+                    if os.path.exists(path):
+                        with open(path) as f:
+                            print(f.read())
+                        return
+    # evidence pruned — fall back to the durable index record
+    index = load_index()
+    for r in sorted(index["runs"], key=lambda x: x.get("startedAt", ""), reverse=True):
+        if r["slug"] == args.slug:
+            print(json.dumps({k: r.get(k) for k in
+                              ("id", "app", "slug", "skill", "branch", "commit",
+                               "status", "verdict", "startedAt", "finishedAt",
+                               "stale", "supersededBy")}, ensure_ascii=False, indent=2))
+            print("# note: evidence pruned — this is the index summary")
+            return
+    sys.exit(f"no run found for slug {args.slug}")
+
+
+def cmd_prune(args):
+    if not os.path.isdir(RUNS):
+        print("nothing to prune")
+        return
+    cutoff = datetime.datetime.now(datetime.timezone.utc).timestamp() - args.evidence * 86400
+    removed = 0
+    for app in os.listdir(RUNS):
+        app_dir = os.path.join(RUNS, app)
+        if not os.path.isdir(app_dir):
+            continue
+        for flow in os.listdir(app_dir):
+            d = os.path.join(app_dir, flow)
+            if not os.path.isdir(d):
+                continue
+            try:
+                mtime = os.path.getmtime(d)
+            except OSError:
+                mtime = 0
+            if mtime < cutoff:
+                shutil.rmtree(d)
+                removed += 1
+    print(json.dumps({"removedEvidenceDirs": removed, "note": "index untouched — tidy handles index retention"},
+                     ensure_ascii=False))
+
+
+def main():
+    p = argparse.ArgumentParser(description="agent-browser run lifecycle")
+    sub = p.add_subparsers(dest="cmd", required=True)
+
+    s = sub.add_parser("start")
+    s.add_argument("app"); s.add_argument("flow"); s.add_argument("--skill", default="unknown")
+    s.set_defaults(fn=cmd_start)
+
+    c = sub.add_parser("checkpoint")
+    c.add_argument("app"); c.add_argument("flow"); c.add_argument("--json", required=True)
+    c.set_defaults(fn=cmd_checkpoint)
+
+    f = sub.add_parser("finish")
+    f.add_argument("app"); f.add_argument("flow")
+    f.add_argument("--status", choices=["complete", "failed", "aborted"], default="complete")
+    f.set_defaults(fn=cmd_finish)
+
+    l = sub.add_parser("ls")
+    l.add_argument("app", nargs="?")
+    l.set_defaults(fn=cmd_ls)
+
+    sh = sub.add_parser("show")
+    sh.add_argument("slug")
+    sh.set_defaults(fn=cmd_show)
+
+    pr = sub.add_parser("prune")
+    pr.add_argument("--evidence", type=int, default=30)
+    pr.add_argument("--keep", type=int, default=5)
+    pr.set_defaults(fn=cmd_prune)
+
+    args = p.parse_args()
+    args.fn(args)
+
+
+if __name__ == "__main__":
+    main()

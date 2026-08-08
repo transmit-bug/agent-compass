@@ -6,7 +6,7 @@ A collection of skills for AI agent workflows, organized by domain:
 
 - **content-manager** — the context an agent carries into a project (AGENTS.md generation and constraints)
 - **desktop-automation** — desktop-application automation (driving, verifying, and fixing apps through their UI)
-- **agent-browser** — *(reserved)* web-application development, testing, maintenance and smoke verification driven by the agent-browser toolset
+- **agent-browser** — web-application development, testing, maintenance and smoke verification driven by the agent-browser toolset
 
 ## Repository Layout
 
@@ -22,7 +22,11 @@ agent-compass/
 │   │   ├── uichecker/
 │   │   ├── ui-fixer/
 │   │   └── smoke-runner/
-│   └── agent-browser/            # (预留) Web 应用开发/测试/维护/冒烟
+│   └── agent-browser/            # Web 开发/测试/维护/冒烟（structure-first）
+│       ├── web-dev/  web-checker/  web-fixer/
+│       ├── web-smoke/  web-maintain/
+│       ├── scripts/    # agent-browser-run / agent-browser-stale
+│       └── references/ # session-model.md（run 模型契约）
 ├── skills-lock.json
 └── README.md
 ```
@@ -94,10 +98,24 @@ commands (`mid.sh start / shot / act / assert / finish`), and an entry in the ca
 `skills-lock.json`. Keep the layers clean: the business skill decides *what* and *when*;
 `computer-automation` decides *how*.
 
-### agent-browser — *(reserved)* web development & QA
+### agent-browser — web development & QA
 
-Placeholder for a future suite driven by the agent-browser toolset: full web-application
-development, testing, maintenance, and smoke verification.
+Web-app lifecycle skills driven by the **agent-browser** skill + CLI (external operation
+layer; the run model, storage, and retention contract is shared in
+`references/session-model.md`):
+
+- **web-dev** — build loop: edit → reload → check structure/errors → iterate to acceptance
+- **web-checker** — judge a rendered page against expected structure (or a reference image) → verdicts
+- **web-fixer** — converge a page to a fixed reference: judge → fix → reload, until the gap list is empty
+- **web-smoke** — verify a defined core flow end-to-end with per-step assertions → PASS/FAIL
+- **web-maintain** — git-driven staleness scan + selective forgetting (tidy)
+
+All five are **user-invoked**. The suite is **structure-first, vision-on-demand**: perception
+runs through the DOM/accessibility tree (snapshot → read → eval → console/errors); pixels are
+only for appearance tasks, DOM-less content, and human evidence. Runs anchor to
+worktree+branch+commit under `.agent-browser/` (committed index + gitignored evidence); git is
+the archive and the index forgets by policy, never grows forever. Install the operation layer
+once: `npm i -g agent-browser && agent-browser install`.
 
 ## Philosophy
 
@@ -132,6 +150,11 @@ npx skills-ref validate ./skills/desktop-automation/computer-automation
 npx skills-ref validate ./skills/desktop-automation/uichecker
 npx skills-ref validate ./skills/desktop-automation/ui-fixer
 npx skills-ref validate ./skills/desktop-automation/smoke-runner
+npx skills-ref validate ./skills/agent-browser/web-dev
+npx skills-ref validate ./skills/agent-browser/web-checker
+npx skills-ref validate ./skills/agent-browser/web-fixer
+npx skills-ref validate ./skills/agent-browser/web-smoke
+npx skills-ref validate ./skills/agent-browser/web-maintain
 ```
 
 ## License

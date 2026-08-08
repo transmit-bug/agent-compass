@@ -1,0 +1,258 @@
+#!/usr/bin/env python3
+"""agent-browser-stale — deterministic staleness scan + retention tidy.
+
+Operates on .agent-browser/ and the app repo git. Computes facts only;
+decisions belong to the agent. Contract: references/session-model.md.
+"""
+import argparse
+import datetime
+import fnmatch
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+
+BASE = ".agent-browser"
+RUNS = os.path.join(BASE, "runs")
+INDEX_JSON = os.path.join(BASE, "index.json")
+INDEX_MD = os.path.join(BASE, "index.md")
+
+DEFAULTS = {
+    "uiSurface": ["src/**", "components/**", "pages/**", "app/**", "*.tsx", "*.jsx", "*.vue", "*.css", "*.scss"],
+    "uiKeywords": ["feat", "fix", "redesign", "ui", "style", "layout", "component", "visual"],
+    "uiDeps": ["react", "next", "vue", "svelte", "angular", "antd", "tailwind", "chakra", "mantine"],
+    "thresholds": {"maxAttempts": 3, "staleSinceDays": 30, "keepRuns": 5, "commitHorizon": 50},
+}
+
+
+def now_iso():
+    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def git(args):
+    return subprocess.run(["git"] + args, capture_output=True, text=True)
+
+
+def load_json(path, default):
+    if os.path.exists(path):
+        with open(path) as f:
+            return json.load(f)
+    return default
+
+
+def save_json(path, data):
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+
+
+def load_manifest():
+    m = load_json(os.path.join(BASE, "manifest.json"), {})
+    cfg = {}
+    cfg.update(DEFAULTS)
+    for k in ("uiSurface", "uiKeywords", "uiDeps"):
+        if k in m:
+            cfg[k] = m[k]
+    t = dict(DEFAULTS["thresholds"])
+    t.update(m.get("thresholds", {}))
+    cfg["thresholds"] = t
+    return cfg
+
+
+def save_md(path, lines):
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    with open(path, "w") as f:
+        f.write("\n".join(lines))
+
+
+def render_index_md(index):
+    runs = sorted(index.get("runs", []), key=lambda r: r.get("startedAt", ""), reverse=True)
+    lines = ["# Agent Browser · 验证索引", ""]
+    if not runs:
+        lines.append("（暂无运行记录）")
+        save_md(INDEX_MD, lines)
+        return
+    lines.append("## 当前验证状态")
+    lines.append("| flow | skill | 最近验证 | commit | 裁决 | 状态 |")
+    lines.append("|---|---|---|---|---|---|")
+    seen = set()
+    for r in runs:
+        key = (r["app"], r["slug"])
+        if key in seen:
+            continue
+        seen.add(key)
+        stamp = r.get("finishedAt") or r.get("startedAt") or "-"
+        stale = "stale" if r.get("stale") else ""
+        lines.append(
+            f"| {r['slug']} | {r.get('skill','-')} | {stamp[:16]} | "
+            f"{r.get('commit','-')[:8]} | {r.get('verdict','-')} | {stale} {r.get('status','')} |"
+        )
+    lines.append("")
+    lines.append("## 最近运行")
+    lines.append("| 时间 | flow | skill | commit | 裁决 | 状态 |")
+    lines.append("|---|---|---|---|---|---|")
+    for r in runs[:20]:
+        stamp = r.get("finishedAt") or r.get("startedAt") or "-"
+        lines.append(
+            f"| {stamp[:16]} | {r['slug']} | {r.get('skill','-')} | {r.get('commit','-')[:8]} "
+            f"| {r.get('verdict','-')} | {r.get('status','')} |"
+        )
+    save_md(INDEX_MD, lines)
+
+
+def save_index(index):
+    save_json(INDEX_JSON, index)
+    render_index_md(index)
+
+
+def file_hits(files, patterns):
+    hits = []
+    for f in files:
+        f = f.replace("\\", "/")
+        if any(fnmatch.fnmatch(f, p) or fnmatch.fnmatch("/" + f, p) for p in patterns):
+            hits.append(f)
+    return hits
+
+
+def deps_bumped(pkg_diff, ui_deps):
+    removed = re.findall(r'^-(?:[^"]*")([a-z0-9@\-_./]+)"\s*:\s*"[^"]+"', pkg_diff, re.M)
+    added = re.findall(r'^\+(?:[^"]*")([a-z0-9@\-_./]+)"\s*:\s*"[^"]+"', pkg_diff, re.M)
+    removed_set = {x.split("/")[0] if x.startswith("@") else x for x in removed}
+    added_set = {x.split("/")[0] if x.startswith("@") else x for x in added}
+    bumped = [d for d in ui_deps if any(
+        (removed_set or added_set) and d in removed_set or d in added_set)]
+    return bumped
+
+
+def eval_run(r, cfg, since_days):
+    """Return (stale_obj|None) for one index run."""
+    if r.get("status") != "complete" or r.get("supersededBy"):
+        return None
+    commit = r.get("commit")
+    if not commit:
+        return None
+    commits = git(["log", f"{commit}..HEAD", "--format=%H %s"])
+    subjects = commits.stdout.strip().splitlines()
+    files = git(["diff", "--name-only", f"{commit}..HEAD"]).stdout.strip().splitlines()
+    files = [f for f in files if f]
+
+    ui_files = file_hits(files, cfg["uiSurface"])
+    msg_hit = [s for s in subjects if any(kw.lower() in s.lower() for kw in cfg["uiKeywords"])]
+    pkg_hit = []
+    if "package.json" in files:
+        pkg_diff = git(["diff", f"{commit}..HEAD", "--", "package.json"]).stdout
+        pkg_hit = deps_bumped(pkg_diff, cfg["uiDeps"])
+
+    strong = ui_files or msg_hit or pkg_hit
+    weak = False
+    if r.get("finishedAt"):
+        try:
+            t = datetime.datetime.fromisoformat(r["finishedAt"].replace("Z", "+00:00"))
+            age = (datetime.datetime.now(datetime.timezone.utc) - t).days
+            weak = age > since_days
+        except ValueError:
+            weak = False
+
+    if not strong and not weak:
+        return None
+    return {
+        "runId": r["id"], "slug": r["slug"], "app": r["app"], "skill": r.get("skill"),
+        "reason": "ui-change" if strong else "age",
+        "severity": "strong" if strong else "weak",
+        "commitsSince": len(subjects),
+        "uiFiles": ui_files[:10],
+        "messageHits": msg_hit[:5],
+        "depBumps": pkg_hit,
+    }
+
+
+def cmd_scan(args):
+    cfg = load_manifest()
+    since_days = args.since or cfg["thresholds"]["staleSinceDays"]
+    index = load_json(INDEX_JSON, {"runs": []})
+    results = []
+    for r in index["runs"]:
+        stale = eval_run(r, cfg, since_days)
+        if stale:
+            results.append(stale)
+    print(json.dumps({"stale": results, "count": len(results)}, ensure_ascii=False, indent=2))
+
+
+def cmd_tidy(args):
+    cfg = load_manifest()
+    t = cfg["thresholds"]
+    index = load_json(INDEX_JSON, {"runs": []})
+    runs = index["runs"]
+
+    # group by app+slug, order newest first
+    groups = {}
+    for r in runs:
+        groups.setdefault((r["app"], r["slug"]), []).append(r)
+    for g in groups.values():
+        g.sort(key=lambda r: r.get("startedAt", ""), reverse=True)
+
+    drop_ids = []
+    for (app, slug), g in groups.items():
+        # 1. superseded and outside the keep window
+        for i, r in enumerate(g):
+            if r.get("supersededBy") and i >= t["keepRuns"]:
+                drop_ids.append(r["id"])
+        # 2. drift horizon: content rewritten since the run
+        for r in g:
+            if r["id"] in drop_ids:
+                continue
+            if not r.get("supersededBy"):
+                commits = git(["log", f"{r.get('commit')}..HEAD", "--format=%H"]) if r.get("commit") else []
+                n = len(commits.stdout.strip().splitlines()) if commits.returncode == 0 else 0
+                if n > t["commitHorizon"]:
+                    drop_ids.append(r["id"])
+        # 3. stale by age with no active newer run
+        active = [r for r in g if not r.get("supersededBy")]
+        if not active:
+            continue
+        newest = active[0]
+        if newest.get("finishedAt"):
+            try:
+                tm = datetime.datetime.fromisoformat(newest["finishedAt"].replace("Z", "+00:00"))
+                age = (datetime.datetime.now(datetime.timezone.utc) - tm).days
+                if age > t["staleSinceDays"]:
+                    for r in active:
+                        drop_ids.append(r["id"])
+            except ValueError:
+                pass
+
+    drop_ids = list(dict.fromkeys(drop_ids))
+    if args.dry_run:
+        print(json.dumps({"wouldDrop": drop_ids, "count": len(drop_ids)}, ensure_ascii=False, indent=2))
+        return
+    keep = [r for r in runs if r["id"] not in drop_ids]
+    index["runs"] = keep
+    save_index(index)
+    removed_evidence = 0
+    for app, slug, _ in [(r["app"], r["slug"], r["id"]) for r in runs if r["id"] in drop_ids]:
+        d = os.path.join(RUNS, app, slug)
+        if os.path.isdir(d):
+            shutil.rmtree(d)
+            removed_evidence += 1
+    print(json.dumps({"dropped": drop_ids, "count": len(drop_ids),
+                      "evidenceDirsRemoved": removed_evidence}, ensure_ascii=False, indent=2))
+
+
+def main():
+    p = argparse.ArgumentParser(description="agent-browser staleness scan + tidy")
+    sub = p.add_subparsers(dest="cmd", required=True)
+    s = sub.add_parser("scan")
+    s.add_argument("--since", type=int, default=None)
+    s.set_defaults(fn=cmd_scan)
+    t = sub.add_parser("tidy")
+    t.add_argument("--dry-run", action="store_true")
+    t.set_defaults(fn=cmd_tidy)
+    args = p.parse_args()
+    args.fn(args)
+
+
+if __name__ == "__main__":
+    main()
