@@ -142,6 +142,27 @@ value is that the agent reaches for it automatically whenever the task involves 
 reshaping UI. Installing the `frontend` group therefore adds a small amount of routing
 context by design; if you prefer zero context, install it per-project instead.
 
+### logic-test — cross-domain business-logic testing
+
+- **logic-test** — infer business logic from source, generate test cases, run them on the
+  real app, and classify problems three ways (implementation mismatch / logic flaw /
+  wrong inference). Cross-domain: the execution channel branches at the last step — web
+  via `agent-browser`, desktop via `computer-automation`, backend via plain Bash.
+
+**Dependencies**: the install group bundles both execution channels so it works out of the
+box — installing the `logic-test` group also installs the `agent-browser` operation stub
+and the `computer-automation` session skill.
+
+```bash
+npx skills add transmit-bug/agent-compass   # pick the logic-test group
+```
+
+Testing backends only (plain Bash, no channel needed)? Install just the skill:
+
+```bash
+npx skills add transmit-bug/agent-compass --skill logic-test
+```
+
 ## Philosophy
 
 > **Write what would confuse an agent, skip what wouldn't.**

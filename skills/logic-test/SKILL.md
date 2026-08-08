@@ -20,6 +20,10 @@ a branch taken at the last step; the first four steps are domain-independent.
 
 ## Dependencies
 
+The logic-test install group bundles both execution channels (`agent-browser` and
+`computer-automation`) — install the group; for backend-only work, logic-test alone
+suffices.
+
 - Execution channel (pick one by app type):
   - **Web**: `agent-browser` (`npm i -g agent-browser && agent-browser install`), command
     surface `agent-browser skills get core`

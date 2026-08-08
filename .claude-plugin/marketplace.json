@@ -42,7 +42,9 @@
       "name": "logic-test",
       "source": "./",
       "skills": [
-        "./skills/logic-test"
+        "./skills/logic-test",
+        "./skills/agent-browser/agent-browser",
+        "./skills/desktop-automation/computer-automation"
       ]
     }
   ]

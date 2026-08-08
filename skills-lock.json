@@ -81,7 +81,7 @@
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/logic-test/SKILL.md",
-      "computedHash": "9252cb7dce764104387ed5f4dd66e2a40016318a2acdf67a1e115e87e9087660"
+      "computedHash": "c65cb3bee9b8d7d6a69f589c7adc1d2fbfbeafef856913c9f8301f5d994a7712"
     },
     "agentsmd": {
       "source": "transmit-bug/agent-compass",
