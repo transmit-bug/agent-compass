@@ -32,7 +32,8 @@ agent-compass/
 │   ├── frontend/                 # frontend design guidance (vendor-tracked from anthropics/claude-plugins-public)
 │   │   └── frontend-design/
 │   ├── backend/                  # general backend discipline (state machines, reliability, migrations)
-│   │   └── state-machine/        # design & verify state machines
+│   │   ├── state-machine/        # design & verify state machines
+│   │   └── reliable-api/         # idempotency, retries, outbox, exactly-once
 ├── scripts/sync-upstream.sh     # check vendored skills against upstream, update on request
 ├── skills-lock.json
 └── README.md
@@ -152,6 +153,7 @@ reliability, and data, applicable across industries. All user-invoked, zero cont
 | Skill | Description |
 |-------|-------------|
 | [state-machine](./skills/backend/state-machine/) | Design and verify state machines in any codebase — legal transitions, terminal states, persistence, and crash recovery. |
+| [reliable-api](./skills/backend/reliable-api/) | Make an API or event flow safe under retries and replays — idempotency, retry policy, outbox, exactly-once semantics. |
 
 ## Philosophy
 
@@ -194,6 +196,7 @@ npx skills-ref validate ./skills/agent-browser/web-smoke
 npx skills-ref validate ./skills/agent-browser/web-maintain
 npx skills-ref validate ./skills/frontend/frontend-design
 npx skills-ref validate ./skills/backend/state-machine
+npx skills-ref validate ./skills/backend/reliable-api
 ```
 
 To check vendored skills against their upstream sources:

@@ -43,7 +43,8 @@
       "name": "backend",
       "source": "./",
       "skills": [
-        "./skills/backend/state-machine"
+        "./skills/backend/state-machine",
+        "./skills/backend/reliable-api"
       ]
     }
   ]

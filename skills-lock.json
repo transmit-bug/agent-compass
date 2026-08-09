@@ -100,6 +100,12 @@
       "sourceType": "github",
       "skillPath": "skills/backend/state-machine/SKILL.md",
       "computedHash": "303e2bd8fbf604bff2724d62156f3feae3ca48fe7ebd2607d20588c2cd74cb35"
+    },
+    "reliable-api": {
+      "source": "transmit-bug/agent-compass",
+      "sourceType": "github",
+      "skillPath": "skills/backend/reliable-api/SKILL.md",
+      "computedHash": "fc05e9cecfd88af1e1235f9624d1019b6bc55017b1be60bdcade954a4f170917"
     }
   }
 }
