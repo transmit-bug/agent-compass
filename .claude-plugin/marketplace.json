@@ -44,7 +44,8 @@
       "source": "./",
       "skills": [
         "./skills/backend/state-machine",
-        "./skills/backend/reliable-api"
+        "./skills/backend/reliable-api",
+        "./skills/backend/data-migration"
       ]
     }
   ]

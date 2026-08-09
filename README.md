@@ -33,7 +33,8 @@ agent-compass/
 │   │   └── frontend-design/
 │   ├── backend/                  # general backend discipline (state machines, reliability, migrations)
 │   │   ├── state-machine/        # design & verify state machines
-│   │   └── reliable-api/         # idempotency, retries, outbox, exactly-once
+│   │   ├── reliable-api/         # idempotency, retries, outbox, exactly-once
+│   │   └── data-migration/       # safe data-layer evolution
 ├── scripts/sync-upstream.sh     # check vendored skills against upstream, update on request
 ├── skills-lock.json
 └── README.md
@@ -154,6 +155,7 @@ reliability, and data, applicable across industries. All user-invoked, zero cont
 |-------|-------------|
 | [state-machine](./skills/backend/state-machine/) | Design and verify state machines in any codebase — legal transitions, terminal states, persistence, and crash recovery. |
 | [reliable-api](./skills/backend/reliable-api/) | Make an API or event flow safe under retries and replays — idempotency, retry policy, outbox, exactly-once semantics. |
+| [data-migration](./skills/backend/data-migration/) | Plan and verify safe data-layer changes — schema migrations, backfills, dual-writes, and rollback, without downtime or data loss. |
 
 ## Philosophy
 
@@ -197,6 +199,7 @@ npx skills-ref validate ./skills/agent-browser/web-maintain
 npx skills-ref validate ./skills/frontend/frontend-design
 npx skills-ref validate ./skills/backend/state-machine
 npx skills-ref validate ./skills/backend/reliable-api
+npx skills-ref validate ./skills/backend/data-migration
 ```
 
 To check vendored skills against their upstream sources:
