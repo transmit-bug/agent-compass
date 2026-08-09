@@ -1,7 +1,6 @@
 ---
 name: readmemd
-description: 'Author and maintain project README.md files — what a stranger needs to run and understand the project.'
-argument-hint: "Mode: create | refresh | trim (default: create)"
+description: 'Author and maintain project README.md files — what a stranger needs to run and understand the project. Three modes — create (default: from scratch), refresh (stale → current), trim (sediment → gone).'
 disable-model-invocation: true
 license: MIT
 metadata:

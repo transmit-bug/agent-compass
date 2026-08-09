@@ -87,13 +87,13 @@
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/content-manager/agentsmd/SKILL.md",
-      "computedHash": "69521d3ebd0b40f8fac567acaffaeea35ae44462a07408a96d39821bcf07bd2c"
+      "computedHash": "e5fb9a26aad9091ec30bab02e7bce34c05230d7943ad8c5bc20f13ae77f59cce"
     },
     "readmemd": {
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/content-manager/readmemd/SKILL.md",
-      "computedHash": "794b49bffd108853211fe4ab34190afcaebd0d1b2eb153dee64a0e2c902b36dd"
+      "computedHash": "d2d17668e0852c8dda9ac303803554f4831757fbc92d800662992525da9a4c22"
     }
   }
 }

@@ -1,7 +1,6 @@
 ---
 name: agentsmd
-description: 'Author AGENTS.md agent instructions — generate the root file, layer sub-directory files for monorepos, or add rules/constraints. Use when creating or updating agent instructions in any repository.'
-argument-hint: "Mode: root | layered | rules (default: root)"
+description: 'Author AGENTS.md agent instructions. Three modes — root (default: repository-level file), layered (per-directory files for monorepos), rules (user constraints and guardrails). Use when creating or updating agent instructions in any repository.'
 license: MIT
 metadata:
   author: agent-compass
