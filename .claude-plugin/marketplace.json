@@ -38,6 +38,13 @@
         "./skills/frontend/frontend-design",
         "./skills/agent-browser/agent-browser"
       ]
+    },
+    {
+      "name": "backend",
+      "source": "./",
+      "skills": [
+        "./skills/backend/state-machine"
+      ]
     }
   ]
 }

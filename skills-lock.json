@@ -94,6 +94,12 @@
       "sourceType": "github",
       "skillPath": "skills/content-manager/readmemd/SKILL.md",
       "computedHash": "d2d17668e0852c8dda9ac303803554f4831757fbc92d800662992525da9a4c22"
+    },
+    "state-machine": {
+      "source": "transmit-bug/agent-compass",
+      "sourceType": "github",
+      "skillPath": "skills/backend/state-machine/SKILL.md",
+      "computedHash": "303e2bd8fbf604bff2724d62156f3feae3ca48fe7ebd2607d20588c2cd74cb35"
     }
   }
 }

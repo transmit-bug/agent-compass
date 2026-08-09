@@ -8,6 +8,7 @@ A collection of skills for AI agent workflows, organized by domain:
 - **desktop-automation** — desktop-application automation (driving, verifying, and fixing apps through their UI)
 - **agent-browser** — web-application development, testing, maintenance, smoke and logic verification driven by the agent-browser toolset
 - **frontend** — distinctive frontend design guidance plus the agent-browser operation layer (vendor-tracked from upstream)
+- **backend** — general-purpose backend discipline skills (state machines, reliability, migrations)
 
 ## Repository Layout
 
@@ -30,6 +31,8 @@ agent-compass/
 │   │   └── references/ # session-model.md (run contract)
 │   ├── frontend/                 # frontend design guidance (vendor-tracked from anthropics/claude-plugins-public)
 │   │   └── frontend-design/
+│   ├── backend/                  # general backend discipline (state machines, reliability, migrations)
+│   │   └── state-machine/        # design & verify state machines
 ├── scripts/sync-upstream.sh     # check vendored skills against upstream, update on request
 ├── skills-lock.json
 └── README.md
@@ -40,8 +43,8 @@ so category folders are discovered natively. Each category is a sub-directory; e
 remains a self-contained directory with its own `SKILL.md` (Agent Skills spec compliant).
 
 **Grouped installs**: `.claude-plugin/marketplace.json` (Claude Code plugin-marketplace
-format) declares the four groups — `content-manager`, `desktop-automation`, `agent-browser`,
-`frontend` — so `npx skills add transmit-bug/agent-compass` shows a collapsible,
+format) declares the five groups — `content-manager`, `desktop-automation`, `agent-browser`,
+`frontend`, `backend` — so `npx skills add transmit-bug/agent-compass` shows a collapsible,
 grouped selection and you can install one group at a time (each skill also stays installable
 by name via `--skill <name>`).
 
@@ -141,6 +144,15 @@ value is that the agent reaches for it automatically whenever the task involves 
 reshaping UI. Installing the `frontend` group therefore adds a small amount of routing
 context by design; if you prefer zero context, install it per-project instead.
 
+### backend — general-purpose backend discipline
+
+Skills for the hard, general parts of backend work — the discipline behind state,
+reliability, and data, applicable across industries. All user-invoked, zero context.
+
+| Skill | Description |
+|-------|-------------|
+| [state-machine](./skills/backend/state-machine/) | Design and verify state machines in any codebase — legal transitions, terminal states, persistence, and crash recovery. |
+
 ## Philosophy
 
 > **Write what would confuse an agent, skip what wouldn't.**
@@ -181,6 +193,7 @@ npx skills-ref validate ./skills/agent-browser/web-fixer
 npx skills-ref validate ./skills/agent-browser/web-smoke
 npx skills-ref validate ./skills/agent-browser/web-maintain
 npx skills-ref validate ./skills/frontend/frontend-design
+npx skills-ref validate ./skills/backend/state-machine
 ```
 
 To check vendored skills against their upstream sources:
