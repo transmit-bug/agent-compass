@@ -24,8 +24,7 @@ skills/                        # skill containers (CLI recursion depth 3)
 ├── content-manager/           # the context an agent carries in (AGENTS.md generation & constraints)
 ├── desktop-automation/        # desktop-application automation (midscene)
 ├── agent-browser/             # web-app development / testing / maintenance / smoke (+ operation-layer stub)
-├── frontend/                  # frontend design guidance (vendor-tracked from upstream)
-└── logic-test/                # cross-domain skills live at the container root
+└── frontend/                  # frontend design guidance (vendor-tracked from upstream)
 .claude-plugin/marketplace.json  # install groups (source must be "./"; bare "." is invalid)
 skills-lock.json                 # skill registry (skillPath + computedHash [+ upstream])
 scripts/sync-upstream.sh         # check/pull vendored skills against their upstream sources
@@ -36,8 +35,10 @@ README.md                        # human index (skill list lives here, not repea
 
 1. First judge whether it deserves to be its own skill: generalization first — use
    branches (one skill, multiple domains) rather than writing one skill per domain
-2. Place it in the right category: `skills/<category>/<name>/SKILL.md`; cross-domain
-   skills go in `skills/<name>/`
+2. Place it in the right category: `skills/<category>/<name>/SKILL.md`. Cross-domain
+   capabilities become multi-mode skills inside a category — one skill, several modes
+   (`agentsmd`'s root | layered | rules is the precedent); there are no root-level
+   containers
 3. SKILL.md must follow:
    - All skills in this repo are `disable-model-invocation: true` (user-invoked, zero
      context load) — **exceptions**: the `frontend` group (and the `agent-browser`
@@ -66,8 +67,9 @@ README.md                        # human index (skill list lives here, not repea
 ## Modifying a skill
 
 - After content changes you must update `computedHash` in `skills-lock.json`:
-  sha256(concatenation of relativePath+content, files sorted by relative path); a
-  directory move only changes `skillPath`, the hash stays the same
+  sha256(concatenation of relativePath+content, files sorted by relative path, with
+  `relativePath` measured from the skill's own directory); a directory move only
+  changes `skillPath`, the hash stays the same
 - Keep a single source of truth for every meaning: shared logic goes into category-level
   scripts/contracts, not copies in each skill
 
@@ -77,3 +79,21 @@ README.md                        # human index (skill list lives here, not repea
   grouping; do **not** install globally
 - Validate locally inside the project directory (project-level), don't pollute the
   global skills directory
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live in this repo's GitHub Issues, operated via the `gh` CLI.
+See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical triage roles, label strings equal to their names:
+`needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`.
+See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one `CONTEXT.md` + `docs/adr/` at the repo root.
+See `docs/agents/domain.md`.
