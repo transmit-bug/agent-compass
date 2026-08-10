@@ -9,6 +9,7 @@ A collection of skills for AI agent workflows, organized by domain:
 - **agent-browser** — web-application development, testing, maintenance, smoke and logic verification driven by the agent-browser toolset
 - **frontend** — distinctive frontend design guidance plus the agent-browser operation layer (vendor-tracked from upstream)
 - **backend** — general-purpose backend discipline skills (state machines, reliability, migrations)
+- **design** — pre-implementation design work: turning ideas into approved design specs
 
 ## Repository Layout
 
@@ -35,6 +36,8 @@ agent-compass/
 │   │   ├── state-machine/        # design & verify state machines
 │   │   ├── reliable-api/         # idempotency, retries, outbox, exactly-once
 │   │   └── data-migration/       # safe data-layer evolution
+│   ├── design/                   # pre-implementation design work (brainstorm → spec)
+│   │   └── spark/                # turn ideas into approved design specs through dialogue
 ├── scripts/sync-upstream.sh     # check vendored skills against upstream, update on request
 ├── skills-lock.json
 └── README.md
@@ -45,8 +48,8 @@ so category folders are discovered natively. Each category is a sub-directory; e
 remains a self-contained directory with its own `SKILL.md` (Agent Skills spec compliant).
 
 **Grouped installs**: `.claude-plugin/marketplace.json` (Claude Code plugin-marketplace
-format) declares the five groups — `content-manager`, `desktop-automation`, `agent-browser`,
-`frontend`, `backend` — so `npx skills add transmit-bug/agent-compass` shows a collapsible,
+format) declares the six groups — `content-manager`, `desktop-automation`, `agent-browser`,
+`frontend`, `backend`, `design` — so `npx skills add transmit-bug/agent-compass` shows a collapsible,
 grouped selection and you can install one group at a time (each skill also stays installable
 by name via `--skill <name>`).
 
@@ -157,6 +160,19 @@ reliability, and data, applicable across industries. All user-invoked, zero cont
 | [reliable-api](./skills/backend/reliable-api/) | Make an API or event flow safe under retries and replays — idempotency, retry policy, outbox, exactly-once semantics. |
 | [data-migration](./skills/backend/data-migration/) | Plan and verify safe data-layer changes — schema migrations, backfills, dual-writes, and rollback, without downtime or data loss. |
 
+### design — pre-implementation design work
+
+Skills for the phase before implementation: turning ideas into approved design specs.
+
+| Skill | Description |
+|-------|-------------|
+| [spark](./skills/design/spark/) | Turn an idea into a design spec through dialogue — one question at a time, then a written spec under `docs/spark/`, then stop. |
+
+**Related ecosystem**: skills that pair with this phase — `grilling` (stress-test a plan),
+`to-spec` / `to-tickets` / `implement` (the pipeline that runs after the spec) — live in the
+[Matt Pocock ecosystem](https://github.com/mattpocock/skills) and are installed from there;
+agent-compass does not duplicate them.
+
 ## Philosophy
 
 > **Write what would confuse an agent, skip what wouldn't.**
@@ -200,6 +216,7 @@ npx skills-ref validate ./skills/frontend/frontend-design
 npx skills-ref validate ./skills/backend/state-machine
 npx skills-ref validate ./skills/backend/reliable-api
 npx skills-ref validate ./skills/backend/data-migration
+npx skills-ref validate ./skills/design/spark
 ```
 
 To check vendored skills against their upstream sources:

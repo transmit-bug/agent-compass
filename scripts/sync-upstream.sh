@@ -6,7 +6,7 @@
 #
 # Usage:
 #   ./scripts/sync-upstream.sh --check   # report SAME/DIFF per skill, exit 1 if any drift (no changes)
-#   ./scripts/sync-upstream.sh           # pull changed SKILL.md files, recompute hashes, update skills-lock.json
+#   ./scripts/sync-upstream.sh           # pull changed SKILL.md files, recompute hashes (via scripts/sync-hashes.sh), update skills-lock.json
 #
 # The hash is computed the same way as AGENTS.md specifies:
 # sha256 of concatenated (relativePath + content) over every file in the skill dir,
@@ -59,44 +59,9 @@ while IFS=$'\t' read -r name skill_path repo up_path ref; do
 done <<< "$ROWS"
 
 if [ "$MODE" != "--check" ] && [ "$DRIFT" -eq 1 ]; then
-  # Recompute computedHash for every skill whose files changed, in place.
-  python3 - "$LOCK" <<'PY'
-import hashlib, json, os, sys
-lock_path = sys.argv[1]
-root = os.path.dirname(os.path.dirname(os.path.abspath(lock_path)))
-
-def skill_hash(skill_path):
-    d = os.path.join(root, os.path.dirname(skill_path))
-    parts = []
-    for dirpath, _dirs, files in os.walk(d):
-        for f in files:
-            if f == ".DS_Store" or "__pycache__" in dirpath:
-                continue
-            full = os.path.join(dirpath, f)
-            rel = os.path.relpath(full, d)
-            parts.append((rel, open(full, "rb").read()))
-    parts.sort(key=lambda p: p[0])
-    h = hashlib.sha256()
-    for rel, content in parts:
-        h.update(rel.encode())
-        h.update(content)
-    return h.hexdigest()
-
-lock = json.load(open(lock_path))
-changed = False
-for name, e in lock.get("skills", {}).items():
-    new_hash = skill_hash(e["skillPath"])
-    if new_hash != e.get("computedHash"):
-        e["computedHash"] = new_hash
-        changed = True
-        print(f"      -> recomputed hash for {name}: {new_hash}")
-if changed:
-    with open(lock_path, "w") as f:
-        json.dump(lock, f, indent=2)
-        f.write("\n")
-PY
   echo ""
-  echo "Updated. Run 'git diff' to review the vendored SKILL.md files and skills-lock.json."
+  "$ROOT/scripts/sync-hashes.sh"
+  echo "Run 'git diff' to review the vendored SKILL.md files and skills-lock.json."
 fi
 
 exit "$DRIFT"

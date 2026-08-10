@@ -24,10 +24,13 @@ skills/                        # skill containers (CLI recursion depth 3)
 ├── content-manager/           # the context an agent carries in (AGENTS.md generation & constraints)
 ├── desktop-automation/        # desktop-application automation (midscene)
 ├── agent-browser/             # web-app development / testing / maintenance / smoke (+ operation-layer stub)
-└── frontend/                  # frontend design guidance (vendor-tracked from upstream)
+├── frontend/                  # frontend design guidance (vendor-tracked from upstream)
+├── backend/                   # general backend discipline (state machines, reliability, migrations)
+└── design/                    # pre-implementation design work (brainstorm → spec)
 .claude-plugin/marketplace.json  # install groups (source must be "./"; bare "." is invalid)
 skills-lock.json                 # skill registry (skillPath + computedHash [+ upstream])
 scripts/sync-upstream.sh         # check/pull vendored skills against their upstream sources
+scripts/sync-hashes.sh           # recompute computedHash for every skill (run before commit)
 README.md                        # human index (skill list lives here, not repeated in this file)
 ```
 
@@ -66,10 +69,15 @@ README.md                        # human index (skill list lives here, not repea
 
 ## Modifying a skill
 
-- After content changes you must update `computedHash` in `skills-lock.json`:
-  sha256(concatenation of relativePath+content, files sorted by relative path, with
-  `relativePath` measured from the skill's own directory); a directory move only
-  changes `skillPath`, the hash stays the same
+- Do NOT chase `computedHash` per edit — the lock is allowed to lag the working
+  tree while you work. Recompute in one pass right before committing:
+  - `./scripts/sync-hashes.sh` updates `skills-lock.json` in place
+  - `./scripts/sync-hashes.sh --check` verifies it already matches (exit 1 on drift)
+  Only the committed state must be consistent.
+- Hash rule (implemented by `scripts/sync-hashes.sh`): sha256(concatenation of
+  relativePath+content, files sorted by relative path, with `relativePath` measured
+  from the skill's own directory); a directory move only changes `skillPath`, the
+  hash stays the same
 - Keep a single source of truth for every meaning: shared logic goes into category-level
   scripts/contracts, not copies in each skill
 

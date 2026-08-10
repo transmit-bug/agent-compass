@@ -112,6 +112,12 @@
       "sourceType": "github",
       "skillPath": "skills/backend/data-migration/SKILL.md",
       "computedHash": "0b0877d1c75dfd6e49c02d8f498e940d42b7e01fcbb9d95e96a577df3a1ec34c"
+    },
+    "spark": {
+      "source": "transmit-bug/agent-compass",
+      "sourceType": "github",
+      "skillPath": "skills/design/spark/SKILL.md",
+      "computedHash": "ebb6c45a53b4e0b74c0071fae88eec04084ff48be7291348608a3f9663fba94a"
     }
   }
 }

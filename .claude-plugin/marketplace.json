@@ -47,6 +47,13 @@
         "./skills/backend/reliable-api",
         "./skills/backend/data-migration"
       ]
+    },
+    {
+      "name": "design",
+      "source": "./",
+      "skills": [
+        "./skills/design/spark"
+      ]
     }
   ]
 }
