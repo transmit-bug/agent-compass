@@ -26,10 +26,11 @@ agent-compass/
 │   │   └── smoke-runner/
 │   ├── agent-browser/            # web dev/test/maintain/smoke/logic (structure-first)
 │   │   ├── agent-browser/        # operation-layer stub (vendor-tracked from vercel-labs/agent-browser)
+│   │   ├── web-router/  web-verify/     # model-invoked entry + primitive
 │   │   ├── web-dev/  web-checker/  web-fixer/
-│   │   ├── web-smoke/  web-maintain/  logic-test/
-│   │   ├── scripts/    # agent-browser-run / agent-browser-stale
-│   │   └── references/ # session-model.md (run contract)
+│   │   ├── web-smoke/  web-maintain/  web-logic/
+│   │   ├── scripts/    # agent-browser-run / agent-browser-stale (+ shared renderer)
+│   │   └── references/ # session-model.md (contract, owned by web-verify)
 │   ├── frontend/                 # frontend design guidance (vendor-tracked from anthropics/claude-plugins-public)
 │   │   └── frontend-design/
 │   ├── backend/                  # general backend discipline (state machines, reliability, migrations)
@@ -119,17 +120,22 @@ commands (`mid.sh start / shot / act / assert / finish`), and an entry in the ca
 
 Web-app lifecycle skills driven by the **agent-browser** skill + CLI (operation layer;
 the run model, storage, and retention contract is shared in
-`references/session-model.md`):
+`references/session-model.md`, owned by the web-verify primitive):
 
 - **agent-browser** — operation-layer discovery stub for the agent-browser CLI (vendor-tracked
   from `vercel-labs/agent-browser`; by design it never goes stale — it points at
   `agent-browser skills get core`, which always matches the installed CLI version)
+- **web-router** — model-invoked deriving entry: routes a lifecycle ask to the right skill
+  (reads README + frontmatter, never a hand-maintained gloss); entry, not gate
+- **web-verify** — model-invoked primitive owning the verification discipline (run model,
+  perception ladder, verdicts, staleness/retention, autonomy gate); every mode skill
+  invokes it by one prose line
 - **web-dev** — build loop: edit → reload → check structure/errors → iterate to acceptance
 - **web-checker** — judge a rendered page against expected structure (or a reference image) → verdicts
 - **web-fixer** — converge a page to a fixed reference: judge → fix → reload, until the gap list is empty
 - **web-smoke** — verify a defined core flow end-to-end with per-step assertions → PASS/FAIL
 - **web-maintain** — git-driven staleness scan + selective forgetting (tidy)
-- **logic-test** — infer business logic from source, generate test cases, run them on the app, classify problems three ways (implementation mismatch / logic flaw / wrong inference)
+- **web-logic** — test a web app's business logic: infer it from source, generate test cases, run them, classify problems three ways (implementation mismatch / logic flaw / wrong inference)
 
 The suite is **structure-first, vision-on-demand**: perception
 runs through the DOM/accessibility tree (snapshot → read → eval → console/errors); pixels are
@@ -200,23 +206,18 @@ These skills work with any agent that supports the Agent Skills standard:
 To validate skills locally:
 
 ```bash
+# Discovery + grouping — the sanctioned check (AGENTS.md). Run in a temp dir; never
+# install globally:
+npx skills add transmit-bug/agent-compass --list
+
+# Structural validation — skills-ref implements the official Agent Skills spec, which
+# does not model this repo's `disable-model-invocation` extension (blueprint §1: the
+# user-invoked invocation axis, carried by most business skills) nor the vendored stub's
+# upstream `hidden` field. Those skills are covered by the discovery check above.
 npx skills-ref validate ./skills/content-manager/agentsmd
-npx skills-ref validate ./skills/content-manager/readmemd
-npx skills-ref validate ./skills/desktop-automation/computer-automation
-npx skills-ref validate ./skills/desktop-automation/uichecker
-npx skills-ref validate ./skills/desktop-automation/ui-fixer
-npx skills-ref validate ./skills/desktop-automation/smoke-runner
-npx skills-ref validate ./skills/agent-browser/agent-browser
-npx skills-ref validate ./skills/agent-browser/web-dev
-npx skills-ref validate ./skills/agent-browser/web-checker
-npx skills-ref validate ./skills/agent-browser/web-fixer
-npx skills-ref validate ./skills/agent-browser/web-smoke
-npx skills-ref validate ./skills/agent-browser/web-maintain
+npx skills-ref validate ./skills/agent-browser/web-router
+npx skills-ref validate ./skills/agent-browser/web-verify
 npx skills-ref validate ./skills/frontend/frontend-design
-npx skills-ref validate ./skills/backend/state-machine
-npx skills-ref validate ./skills/backend/reliable-api
-npx skills-ref validate ./skills/backend/data-migration
-npx skills-ref validate ./skills/design/spark
 ```
 
 To check vendored skills against their upstream sources:

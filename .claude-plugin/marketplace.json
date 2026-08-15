@@ -23,12 +23,14 @@
       "source": "./",
       "skills": [
         "./skills/agent-browser/agent-browser",
+        "./skills/agent-browser/web-router",
+        "./skills/agent-browser/web-verify",
         "./skills/agent-browser/web-checker",
         "./skills/agent-browser/web-dev",
         "./skills/agent-browser/web-fixer",
         "./skills/agent-browser/web-maintain",
         "./skills/agent-browser/web-smoke",
-        "./skills/agent-browser/logic-test"
+        "./skills/agent-browser/web-logic"
       ]
     },
     {

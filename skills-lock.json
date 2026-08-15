@@ -40,31 +40,49 @@
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/agent-browser/web-checker/SKILL.md",
-      "computedHash": "b7ffacf6063e808b2476345bf68e1c9107f53ed43292e085c2031e07073e8ab8"
+      "computedHash": "680433bb1987a42d9f4026f1bca5339e59f3114f1ad1b532acb21ab41642f2d4"
+    },
+    "web-router": {
+      "source": "transmit-bug/agent-compass",
+      "sourceType": "github",
+      "skillPath": "skills/agent-browser/web-router/SKILL.md",
+      "computedHash": "140672f8ffc64017ebd1a08df1417a4c21bfeffa9560f63b41e08c8bb7b62deb"
+    },
+    "web-verify": {
+      "source": "transmit-bug/agent-compass",
+      "sourceType": "github",
+      "skillPath": "skills/agent-browser/web-verify/SKILL.md",
+      "computedHash": "e0cf987777f133bcb72db67aa1d06b3e84fa18819b204ac0c8b35305ff9ed70b"
     },
     "web-dev": {
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/agent-browser/web-dev/SKILL.md",
-      "computedHash": "97edafa52505b3da683112499084a9f86db7e577c5c1e17afe78356b0d749c54"
+      "computedHash": "442f4af322102e3eba0e10bc59d78a5339ca9663663028f4b71a27a831c3f148"
     },
     "web-fixer": {
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/agent-browser/web-fixer/SKILL.md",
-      "computedHash": "484be263fa3a504372f12bcc7b5492c9e015f45c850967b2036871deba6763e8"
+      "computedHash": "b2def9b4f69c61e4a8aff8cd3ebb59e2d48085048e537412d6cbdf160775c387"
     },
     "web-maintain": {
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/agent-browser/web-maintain/SKILL.md",
-      "computedHash": "f1c0514a47358234b543f5fb3e0275db59e1795e492bcbdb4179059ba57792ff"
+      "computedHash": "e10ade5ea810ee0084d6435d3ab75b48a6aadba7c886a0c736719d261de67345"
     },
     "web-smoke": {
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/agent-browser/web-smoke/SKILL.md",
-      "computedHash": "dae29eb50630816030e616648a06d548910ee35054dbd2419912a82134845d4d"
+      "computedHash": "f2c013d83c6cf54f6c06d8bb23586b3581346cf4b0ddabc759831db57048e569"
+    },
+    "web-logic": {
+      "source": "transmit-bug/agent-compass",
+      "sourceType": "github",
+      "skillPath": "skills/agent-browser/web-logic/SKILL.md",
+      "computedHash": "584a6fa14088669c688df661d525b67febfd513ed6946dd22385adb8310c2ba2"
     },
     "frontend-design": {
       "source": "transmit-bug/agent-compass",
@@ -76,12 +94,6 @@
         "path": "plugins/frontend-design/skills/frontend-design/SKILL.md",
         "ref": "main"
       }
-    },
-    "logic-test": {
-      "source": "transmit-bug/agent-compass",
-      "sourceType": "github",
-      "skillPath": "skills/agent-browser/logic-test/SKILL.md",
-      "computedHash": "bdf6cf81128db50d703c52acf03160814352fe1b9e7441d11726ed3509201a5d"
     },
     "agentsmd": {
       "source": "transmit-bug/agent-compass",

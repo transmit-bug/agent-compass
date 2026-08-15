@@ -2,42 +2,32 @@
 """agent-browser-run — run lifecycle for the agent-browser skill suite.
 
 Operates on .agent-browser/ in the app repo cwd. Computes and stores only;
-decisions belong to the agent. Contract: references/session-model.md.
+decisions belong to the agent. Contract: references/session-model.md (owned by
+web-verify); shared facts + orient-doc rendering live in agent_browser_common.py.
 """
 import argparse
 import datetime
 import json
 import os
 import shutil
-import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+from agent_browser_common import (  # noqa: E402
+    ASSESSMENT_KINDS,
+    INDEX_MD,
+    RUNS,
+    git,
+    load_index,
+    load_json,
+    now_iso,
+    render_orient,
+    save_index,
+    save_json,
+)
+
 BASE = ".agent-browser"
-RUNS = os.path.join(BASE, "runs")
 INDEX_JSON = os.path.join(BASE, "index.json")
-INDEX_MD = os.path.join(BASE, "index.md")
-
-
-def now_iso():
-    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def git(args, cwd=None):
-    return subprocess.run(["git"] + args, capture_output=True, text=True, cwd=cwd)
-
-
-def load_json(path, default):
-    if os.path.exists(path):
-        with open(path) as f:
-            return json.load(f)
-    return default
-
-
-def save_json(path, data):
-    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    with open(path, "w") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-        f.write("\n")
 
 
 def run_dir(app, slug):
@@ -55,56 +45,6 @@ def overall_verdict(checkpoints):
     if any(x == "unsure" for x in v):
         return "unsure"
     return "pass" if v else "-"
-
-
-def save_md(path, lines):
-    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    with open(path, "w") as f:
-        f.write("\n".join(lines))
-
-
-def render_index_md(index):
-    runs = sorted(index.get("runs", []), key=lambda r: r.get("startedAt", ""), reverse=True)
-    lines = ["# Agent Browser · Verification Index", ""]
-    if not runs:
-        lines.append("(no runs recorded)")
-        save_md(INDEX_MD, lines)
-        return
-    lines.append("## Current Verification Status")
-    lines.append("| flow | skill | last verified | commit | verdict | status |")
-    lines.append("|---|---|---|---|---|---|")
-    seen = set()
-    for r in runs:
-        key = (r["app"], r["slug"])
-        if key in seen:
-            continue
-        seen.add(key)
-        stamp = r.get("finishedAt") or r.get("startedAt") or "-"
-        stale = "stale" if r.get("stale") else ""
-        lines.append(
-            f"| {r['slug']} | {r.get('skill','-')} | {stamp[:16]} | "
-            f"{r.get('commit','-')[:8]} | {r.get('verdict','-')} | {stale} {r.get('status','')} |"
-        )
-    lines.append("")
-    lines.append("## Recent Runs")
-    lines.append("| time | flow | skill | commit | verdict | status |")
-    lines.append("|---|---|---|---|---|---|")
-    for r in runs[:20]:
-        stamp = r.get("finishedAt") or r.get("startedAt") or "-"
-        lines.append(
-            f"| {stamp[:16]} | {r['slug']} | {r.get('skill','-')} | {r.get('commit','-')[:8]} "
-            f"| {r.get('verdict','-')} | {r.get('status','')} |"
-        )
-    save_md(INDEX_MD, lines)
-
-
-def load_index():
-    return load_json(INDEX_JSON, {"runs": []})
-
-
-def save_index(index):
-    save_json(INDEX_JSON, index)
-    render_index_md(index)
 
 
 def repo_info():
@@ -137,6 +77,9 @@ def cmd_start(args):
         "checkpoints": [],
         "supersededBy": None,
         "stale": None,
+        "ticket": args.ticket,
+        "blockers": [b.strip() for b in args.blocked_by.split(",") if b.strip()] if args.blocked_by else [],
+        "provenance": [p.strip() for p in args.provenance.split(",") if p.strip()] if args.provenance else [],
     }
     save_json(run_path(args.app, args.flow), run)
 
@@ -150,6 +93,8 @@ def cmd_start(args):
         "branch": run["branch"], "commit": run["commit"], "status": "running",
         "startedAt": run["startedAt"], "finishedAt": None, "verdict": "-",
         "stale": None, "supersededBy": None,
+        "ticket": run["ticket"], "blockers": run["blockers"],
+        "provenance": run["provenance"],
     })
     save_index(index)
     print(json.dumps({"runId": run_id, "dir": d}, ensure_ascii=False))
@@ -206,6 +151,33 @@ def render_report(run):
     return "\n".join(lines)
 
 
+def cmd_assess(args):
+    try:
+        a = json.loads(args.json)
+    except json.JSONDecodeError:
+        sys.exit("assess --json must be valid JSON")
+    if not isinstance(a, dict):
+        sys.exit("assess --json must be a JSON object")
+    for kind, allowed in ASSESSMENT_KINDS.items():
+        if a.get(kind) not in allowed:
+            sys.exit(f"assess: {kind} must be one of {'|'.join(allowed)}")
+    record = {
+        "app": args.app,
+        "scope": args.scope,
+        "assessedAt": now_iso(),
+        "completeness": a["completeness"],
+        "logic": a["logic"],
+        "flow": a["flow"],
+        "ui": a["ui"],
+        "gist": a.get("gist", "-"),
+    }
+    index = load_index()
+    index.setdefault("assessments", []).append(record)
+    save_index(index)
+    print(json.dumps({"scope": record["scope"], "assessedAt": record["assessedAt"]},
+                     ensure_ascii=False))
+
+
 def cmd_finish(args):
     path = run_path(args.app, args.flow)
     run = load_json(path, None)
@@ -230,6 +202,35 @@ def cmd_finish(args):
     print(json.dumps({"runId": run["id"], "status": run["status"],
                       "verdict": overall_verdict(run["checkpoints"]),
                       "report": report_path}, ensure_ascii=False))
+
+
+def cmd_init(args):
+    """Scaffold the app repo's .agent-browser/ state home (idempotent)."""
+    index = load_index()
+    created = []
+    if not os.path.isdir(BASE):
+        os.makedirs(BASE, exist_ok=True)
+        created.append(BASE)
+    if not os.path.exists(INDEX_JSON):
+        save_json(INDEX_JSON, {"runs": [], "assessments": []})
+        created.append(INDEX_JSON)
+    render_orient(index)
+
+    entry = ".agent-browser/runs/"
+    header = "# agent-browser evidence (bulky; git stays the archive)"
+    gi = ".gitignore"
+    if os.path.exists(gi) and entry in open(gi).read().splitlines():
+        gi_note = "exists"
+    else:
+        with open(gi, "a") as f:
+            if os.path.exists(gi) and os.path.getsize(gi) > 0:
+                f.write("\n")
+            f.write(f"{header}\n{entry}\n")
+        gi_note = "created" if gi not in created else "appended"
+        created.append(gi)
+    print(json.dumps({"created": created, "gitignore": gi_note, "orientDoc": INDEX_MD,
+                      "note": "next: record how to run the app, auth the vault, start a run"},
+                     ensure_ascii=False))
 
 
 def cmd_ls(args):
@@ -294,13 +295,23 @@ def main():
     p = argparse.ArgumentParser(description="agent-browser run lifecycle")
     sub = p.add_subparsers(dest="cmd", required=True)
 
+    i = sub.add_parser("init", help="scaffold .agent-browser/ + .gitignore (idempotent)")
+    i.set_defaults(fn=cmd_init)
+
     s = sub.add_parser("start")
     s.add_argument("app"); s.add_argument("flow"); s.add_argument("--skill", default="unknown")
+    s.add_argument("--ticket", default=None, help="flow's tracker ref, e.g. #42")
+    s.add_argument("--blocked-by", default=None, help="comma-separated tracker refs the flow waits on")
+    s.add_argument("--provenance", default=None, help="comma-separated source files the verification rests on")
     s.set_defaults(fn=cmd_start)
 
     c = sub.add_parser("checkpoint")
     c.add_argument("app"); c.add_argument("flow"); c.add_argument("--json", required=True)
     c.set_defaults(fn=cmd_checkpoint)
+
+    a = sub.add_parser("assess")
+    a.add_argument("app"); a.add_argument("scope"); a.add_argument("--json", required=True)
+    a.set_defaults(fn=cmd_assess)
 
     f = sub.add_parser("finish")
     f.add_argument("app"); f.add_argument("flow")

@@ -3,7 +3,7 @@
 The agent-browser suite manages a managed web app's lifecycle **per-feature**: each feature arcs
 spec → dev → check → fix → smoke → maintain — forward, with dev↔check↔fix iterating until
 verified, smoke as the gate, maintain ongoing until retired — owned by the business skills
-(`web-dev` / `web-checker` + `logic-test` / `web-fixer` / `web-smoke` / `web-maintain`). Spec is
+(`web-dev` / `web-checker` + `web-logic` / `web-fixer` / `web-smoke` / `web-maintain`). Spec is
 tracker-side intent, never indexed verification state.
 
 State is **facts-only**: `index.json` stores records (latest run per feature+flow — verdict,

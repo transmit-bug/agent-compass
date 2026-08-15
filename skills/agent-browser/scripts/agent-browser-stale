@@ -2,7 +2,8 @@
 """agent-browser-stale — deterministic staleness scan + retention tidy.
 
 Operates on .agent-browser/ and the app repo git. Computes facts only;
-decisions belong to the agent. Contract: references/session-model.md.
+decisions belong to the agent. Contract: references/session-model.md (owned by
+web-verify); shared facts + orient-doc rendering live in agent_browser_common.py.
 """
 import argparse
 import datetime
@@ -11,13 +12,13 @@ import json
 import os
 import re
 import shutil
-import subprocess
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+from agent_browser_common import RUNS, git, load_index, load_json, now_iso, save_index  # noqa: E402
+
 BASE = ".agent-browser"
-RUNS = os.path.join(BASE, "runs")
 INDEX_JSON = os.path.join(BASE, "index.json")
-INDEX_MD = os.path.join(BASE, "index.md")
 
 DEFAULTS = {
     "uiSurface": ["src/**", "components/**", "pages/**", "app/**", "*.tsx", "*.jsx", "*.vue", "*.css", "*.scss"],
@@ -25,28 +26,6 @@ DEFAULTS = {
     "uiDeps": ["react", "next", "vue", "svelte", "angular", "antd", "tailwind", "chakra", "mantine"],
     "thresholds": {"maxAttempts": 3, "staleSinceDays": 30, "keepRuns": 5, "commitHorizon": 50},
 }
-
-
-def now_iso():
-    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-
-
-def git(args):
-    return subprocess.run(["git"] + args, capture_output=True, text=True)
-
-
-def load_json(path, default):
-    if os.path.exists(path):
-        with open(path) as f:
-            return json.load(f)
-    return default
-
-
-def save_json(path, data):
-    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    with open(path, "w") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
-        f.write("\n")
 
 
 def load_manifest():
@@ -60,52 +39,6 @@ def load_manifest():
     t.update(m.get("thresholds", {}))
     cfg["thresholds"] = t
     return cfg
-
-
-def save_md(path, lines):
-    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-    with open(path, "w") as f:
-        f.write("\n".join(lines))
-
-
-def render_index_md(index):
-    runs = sorted(index.get("runs", []), key=lambda r: r.get("startedAt", ""), reverse=True)
-    lines = ["# Agent Browser · Verification Index", ""]
-    if not runs:
-        lines.append("(no runs recorded)")
-        save_md(INDEX_MD, lines)
-        return
-    lines.append("## Current Verification Status")
-    lines.append("| flow | skill | last verified | commit | verdict | status |")
-    lines.append("|---|---|---|---|---|---|")
-    seen = set()
-    for r in runs:
-        key = (r["app"], r["slug"])
-        if key in seen:
-            continue
-        seen.add(key)
-        stamp = r.get("finishedAt") or r.get("startedAt") or "-"
-        stale = "stale" if r.get("stale") else ""
-        lines.append(
-            f"| {r['slug']} | {r.get('skill','-')} | {stamp[:16]} | "
-            f"{r.get('commit','-')[:8]} | {r.get('verdict','-')} | {stale} {r.get('status','')} |"
-        )
-    lines.append("")
-    lines.append("## Recent Runs")
-    lines.append("| time | flow | skill | commit | verdict | status |")
-    lines.append("|---|---|---|---|---|---|")
-    for r in runs[:20]:
-        stamp = r.get("finishedAt") or r.get("startedAt") or "-"
-        lines.append(
-            f"| {stamp[:16]} | {r['slug']} | {r.get('skill','-')} | {r.get('commit','-')[:8]} "
-            f"| {r.get('verdict','-')} | {r.get('status','')} |"
-        )
-    save_md(INDEX_MD, lines)
-
-
-def save_index(index):
-    save_json(INDEX_JSON, index)
-    render_index_md(index)
 
 
 def file_hits(files, patterns):
@@ -140,13 +73,14 @@ def eval_run(r, cfg, since_days):
     files = [f for f in files if f]
 
     ui_files = file_hits(files, cfg["uiSurface"])
+    prov_hit = [f for f in files if f in (r.get("provenance") or [])]
     msg_hit = [s for s in subjects if any(kw.lower() in s.lower() for kw in cfg["uiKeywords"])]
     pkg_hit = []
     if "package.json" in files:
         pkg_diff = git(["diff", f"{commit}..HEAD", "--", "package.json"]).stdout
         pkg_hit = deps_bumped(pkg_diff, cfg["uiDeps"])
 
-    strong = ui_files or msg_hit or pkg_hit
+    strong = ui_files or prov_hit or msg_hit or pkg_hit
     weak = False
     if r.get("finishedAt"):
         try:
@@ -160,10 +94,12 @@ def eval_run(r, cfg, since_days):
         return None
     return {
         "runId": r["id"], "slug": r["slug"], "app": r["app"], "skill": r.get("skill"),
-        "reason": "ui-change" if strong else "age",
+        "reason": "provenance-change" if prov_hit else ("ui-change" if strong else "age"),
         "severity": "strong" if strong else "weak",
+        "detectedAt": now_iso(),
         "commitsSince": len(subjects),
         "uiFiles": ui_files[:10],
+        "provFiles": prov_hit[:10],
         "messageHits": msg_hit[:5],
         "depBumps": pkg_hit,
     }
@@ -172,13 +108,18 @@ def eval_run(r, cfg, since_days):
 def cmd_scan(args):
     cfg = load_manifest()
     since_days = args.since or cfg["thresholds"]["staleSinceDays"]
-    index = load_json(INDEX_JSON, {"runs": []})
+    index = load_index()
     results = []
     for r in index["runs"]:
         stale = eval_run(r, cfg, since_days)
         if stale:
             results.append(stale)
+        if args.mark:
+            r["stale"] = stale  # record the computed fact; forgetting stays with tidy
     print(json.dumps({"stale": results, "count": len(results)}, ensure_ascii=False, indent=2))
+    if args.mark:
+        save_index(index)
+        print(json.dumps({"marked": "stale facts recorded; orient doc re-rendered"}, ensure_ascii=False))
 
 
 def cmd_tidy(args):
@@ -246,6 +187,7 @@ def main():
     sub = p.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("scan")
     s.add_argument("--since", type=int, default=None)
+    s.add_argument("--mark", action="store_true", help="record computed staleness facts on the index")
     s.set_defaults(fn=cmd_scan)
     t = sub.add_parser("tidy")
     t.add_argument("--dry-run", action="store_true")
