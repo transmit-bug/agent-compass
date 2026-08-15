@@ -34,6 +34,11 @@ scripts/sync-hashes.sh           # recompute computedHash for every skill (run b
 README.md                        # human index (skill list lives here, not repeated in this file)
 ```
 
+Groups with real machinery (agent-browser, desktop-automation) instantiate the architecture
+pattern in `docs/blueprint.md` (invocation axis, progressive disclosure, workflow rules,
+state-carrier pattern); content-only groups apply its progressive-disclosure and invocation
+parts where useful. The blueprint's glossary is the canonical vocabulary.
+
 ## Adding a skill
 
 1. First judge whether it deserves to be its own skill: generalization first — use
