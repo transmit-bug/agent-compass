@@ -26,7 +26,7 @@ agent-compass/
 │   │   └── smoke-runner/
 │   ├── agent-browser/            # web dev/test/maintain/smoke/logic (structure-first)
 │   │   ├── agent-browser/        # operation-layer stub (vendor-tracked from vercel-labs/agent-browser)
-│   │   ├── web-router/  web-verify/     # model-invoked entry + primitive
+│   │   ├── web-router/  web-verify/  web-setup/   # entry + primitive + onboarding
 │   │   ├── web-dev/  web-checker/  web-fixer/
 │   │   ├── web-smoke/  web-maintain/  web-logic/
 │   │   ├── scripts/    # agent-browser-run / agent-browser-stale (+ shared renderer)
@@ -127,6 +127,8 @@ the run model, storage, and retention contract is shared in
   `agent-browser skills get core`, which always matches the installed CLI version)
 - **web-router** — model-invoked deriving entry: routes a lifecycle ask to the right skill
   (reads README + frontmatter, never a hand-maintained gloss); entry, not gate
+- **web-setup** — onboard an app repo: scaffold `.agent-browser/` + orient doc, gitignore the
+  evidence, record how to run the app, check the operation layer and vault
 - **web-verify** — model-invoked primitive owning the verification discipline (run model,
   perception ladder, verdicts, staleness/retention, autonomy gate); every mode skill
   invokes it by one prose line

@@ -25,6 +25,7 @@ read them, they are canonical; the route is re-derived every time, never memoriz
 | Core-flow end-to-end verification | web-smoke |
 | Staleness / tidy / what drifted | web-maintain |
 | "Where does the app stand?" | orient doc first, then the stage's skill |
+| No orient doc yet / onboard an app repo | web-setup |
 | Ambiguous ask | orient doc + most stale item |
 
 ## Steps

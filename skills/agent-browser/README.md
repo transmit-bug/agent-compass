@@ -13,6 +13,7 @@ Usage guide (setup, first session, cross-session continuation):
 | Need | Skill |
 |---|---|
 | Which skill fits this web-app ask? | [web-router](./web-router/) — model-invoked entry; routes and points |
+| Set up / onboard an app repo | [web-setup](./web-setup/) — scaffold `.agent-browser/`, notes, vault, reachability |
 | Verification discipline (run model, perception, verdicts, staleness) | [web-verify](./web-verify/) — model-invoked primitive; every mode skill invokes it by prose |
 | Implement / develop a feature | [web-dev](./web-dev/) |
 | Does the page match expectations | [web-checker](./web-checker/) |
@@ -37,6 +38,7 @@ business (user-invoked)                  primitive (model-invoked)    operation 
 │  web-smoke    flow verify    │         │  autonomy gate        │    │  skills get core      │
 │  web-maintain staleness/tidy │         └───────────┬───────────┘    └───────────────────────┘
 │  web-logic    logic testing  │                     │ shared
+│  web-setup    app onboarding │                     ▼
 └──────────┬───────────────────┘                     ▼
            │  web-router (entry, model-invoked, routes)   scripts/agent-browser-run      (run lifecycle + assess)
            │                                              scripts/agent-browser-stale    (staleness scan + tidy)
@@ -55,8 +57,8 @@ always come from `agent-browser skills get core` — the CLI is the reference, n
 ```bash
 npm i -g agent-browser && agent-browser install   # operation layer (one-time)
 npx skills add transmit-bug/agent-compass --skill web-router --skill web-verify \
-  --skill web-smoke --skill web-checker --skill web-fixer --skill web-dev \
-  --skill web-maintain --skill web-logic
+  --skill web-setup --skill web-smoke --skill web-checker --skill web-fixer \
+  --skill web-dev --skill web-maintain --skill web-logic
 ```
 
 Extending: a new web workflow = a new `<name>/SKILL.md` in this directory (user-invoked),

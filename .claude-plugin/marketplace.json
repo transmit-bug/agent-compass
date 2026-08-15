@@ -25,6 +25,7 @@
         "./skills/agent-browser/agent-browser",
         "./skills/agent-browser/web-router",
         "./skills/agent-browser/web-verify",
+        "./skills/agent-browser/web-setup",
         "./skills/agent-browser/web-checker",
         "./skills/agent-browser/web-dev",
         "./skills/agent-browser/web-fixer",
