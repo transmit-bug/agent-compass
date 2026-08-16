@@ -9,48 +9,35 @@ allowed-tools:
 # Web Verify — the verification discipline (primitive)
 
 Model-invoked primitive owning the verification discipline for the agent-browser suite;
-mode skills invoke it by prose — "run the web-verify discipline" — and inherit what follows.
-The contract (shapes, storage, command tables) is
-[references/session-model.md](references/session-model.md), owned here; the run-lifecycle
-and staleness scripts ship with this skill (`scripts/`), bootstrapped by web-setup into the
-app's `.agent-browser/scripts/` so the state home is self-contained.
+mode skills invoke it by prose — "run the web-verify discipline" — and inherit what
+follows. The contract (record schema, perception ladder, rules, storage) is
+[references/session-model.md](references/session-model.md), owned here; the derive script
+(`scripts/agent-browser-derive`) ships with this skill and is bootstrapped by web-setup
+into the app's `.agent-browser/scripts/`.
 
-## Run model — write-as-you-go
+## The discipline
 
-start → checkpoint → finish, recorded as it happens: a checkpoint verdict is written the
-moment it is known; an interrupted run (aborted) is legal with its checkpoints preserved. A
-new run for the same flow supersedes the previous complete one — a chain, not an overwrite.
-Stale is a verdict about the record, set by the scan, never deleted automatically.
-
-## Perception — structure-first, vision-on-demand
-
-Perceive through the DOM/accessibility tree by default: snapshot → read → eval →
-console/errors; pixels only for appearance, DOM-less content, and human evidence. After any
-page-changing action: wait, then re-snapshot — refs go stale the moment the page changes.
-Prefer deterministic assertions; reserve LLM judgment for ambiguity.
-
-## Verdicts — pass / fail / unsure, with evidence
-
-Exactly one verdict per checkpoint, with evidence. Pass: the page shows the expectation.
-Fail: it does not. Unsure: the page does not clearly resolve — show the evidence and ask,
-never guess. Overall: any fail → fail; else any unsure → unsure; else pass.
-
-## Staleness & retention
-
-The scan computes staleness (strong: UI files changed, UI keywords hit, UI deps bumped;
-weak: age) and records it. Forgetting is the tidy: explicit, previewed, user-confirmed —
-never background. Git is the archive; the index forgets meaning, not history.
-
-## Autonomy gate — act, then ask
-
-Act on every answer the code and the index can derive. Ask only when an answer cannot be
-derived or an action is irreversible or expensive. Record everything — a question answered
-once is never re-asked; the answer is written where the next session reads it.
+- **Write-as-you-go** — record a checkpoint verdict the moment it is known, in
+  `.agent-browser/index.json` (schema in session-model.md); an interrupted run is a legal
+  state with its checkpoints preserved. A new run for a flow supersedes the previous
+  terminal one — a chain, not an overwrite.
+- **Perceive structure-first** — DOM/accessibility tree by default (snapshot → read →
+  eval → console/errors); pixels only for appearance, DOM-less content, and human
+  evidence. After any page-changing action: wait, then re-snapshot — refs go stale the
+  moment the page changes.
+- **Verdicts are honest** — exactly one per checkpoint, with evidence. `pass`: the page
+  shows the expectation. `fail`: it does not. `unsure`: the page does not clearly resolve —
+  show the evidence and ask, never guess. Prefer deterministic assertions; reserve LLM
+  judgment for ambiguity.
+- **Act, then ask** — act on every answer the code and the records can derive. Ask only
+  when an answer cannot be derived or an action is irreversible or expensive. Record
+  everything — a question answered once is never re-asked.
 
 ## Boundaries
 
-- **Discipline lives here** (prose). **Computation lives in the scripts** (`.agent-browser/scripts/agent-browser-run`,
-  `agent-browser-stale`, shipped with this skill, bootstrapped by web-setup). **The browser surface lives in the CLI** — `agent-browser
-  skills get core`, never hardcoded. Install the operation layer once:
-  `npm i -g agent-browser && agent-browser install`.
-- The primitive is invoked by mode skills; it never drives the browser itself.
+- **Discipline lives here** (prose). **Derivation lives in the script**
+  (`agent-browser-derive render | stale | tidy` — status, orient doc, staleness, retention;
+  it computes, never decides). **The browser surface lives in the CLI** —
+  `agent-browser skills get core`, never hardcoded. The primitive is invoked by mode
+  skills; it never drives the browser itself.
+- Install the operation layer once: `npm i -g agent-browser && agent-browser install`.

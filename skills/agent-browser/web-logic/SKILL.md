@@ -19,17 +19,20 @@ web-verify discipline), then executes the cases and classifies the problems foun
 tests and reports — it never changes code. Invoked by name — "use web-logic to test the
 checkout logic".
 
-Run the **web-verify** discipline for perception, verdicts, and the autonomy gate. The run
-is optional for ad-hoc probes (results then land in the report only); start one whenever
-the session should be traceable or continuable.
+Run the **web-verify** discipline for perception, verdicts, and recording. Records are
+written by hand into `.agent-browser/index.json` (schema in session-model.md); a run is
+optional for ad-hoc probes (results then land in the report only) — traceability is the
+price of continuation: record one whenever the session should be continuable. Re-render
+with `.agent-browser/scripts/agent-browser-derive render` when you finish.
 
 ## Steps
 
 1. **Anchor in the scenario library.** Read `docs/agent-browser/scenarios/` — the README
-   index and the existing scenarios. If a scenario already covers the domain, extend it and
-   compose by `depends` — never re-derive what is recorded. Only a genuinely new domain
-   gets a new scenario.
+   index and the existing scenarios. If a scenario already covers the domain, extend it
+   and compose by `depends` — never re-derive what is recorded. Only a genuinely new
+   domain gets a new scenario.
    *Done when: you know which scenarios exist and which domain still needs deriving.*
+
 2. **Derive the logic from source.** Read the code (entry / routes / components / state /
    API calls), combine it with the page copy and interactions, and derive the business
    logic: core flows (paths a user can take), rules on each path (conditional branches,
@@ -43,18 +46,21 @@ the session should be traceable or continuable.
    ask for logic the code already states.
    *Done when: every entry point and branch in the source is accounted for in the
    scenario, and the scenario is written with frontmatter and indexed.*
+
 3. **Generate test cases from the scenario.** At least one happy path per plan entry, both
    sides of every conditional branch, boundary values (empty, minimum, maximum, overlong,
    invalid format), and error paths (API failure, timeout, invalid submission). Each case:
    input → action → expected result, tagged with its plan entry — appended to the
    scenario's Cases section.
    *Done when: every plan entry has cases and both sides of every branch are covered.*
-4. **Execute the cases.** Start the run (`.agent-browser/scripts/agent-browser-run start <app> <flow>
-   --skill web-logic --provenance <the scenario's provenance>` — provenance makes a
-   logic-relevant code change flag the run stale), then run the cases one by one, driven by
-   the browser; assert structurally (snapshot / read / get count / eval / wait --text);
-   record a checkpoint per case — action, actual result, expected, verdict.
+
+4. **Execute the cases.** Record the run (with the scenario's `provenance` — provenance
+   makes a logic-relevant code change flag the run stale), then run the cases one by one,
+   driven by the browser; assert structurally (snapshot / read / get count / eval /
+   `wait --text`); record a checkpoint per case — action, actual result, expected,
+   verdict.
    *Done when: every case has been executed and recorded.*
+
 5. **Classify the problems.** Each failing or anomalous case falls into one of three:
    - **Implementation doesn't match logic** — the source says A, the behavior is B → code
      bug (attach source location + actual evidence)
@@ -63,11 +69,11 @@ the session should be traceable or continuable.
    - **I inferred wrong** — I misread the business logic → fix the case and re-run
    *Done when: every anomaly is classified; mismatches carry a source location, flaws state
    where the flaw is.*
-6. **Report and record.** Finish the run (`.agent-browser/scripts/agent-browser-run finish <app> <flow>
-   --status complete|failed|aborted`); organize the report by the three categories, each
-   problem carrying evidence (case, action steps, expected, actual, screenshot or snapshot
-   path); end with a conclusion and a recommended next step; open app-repo tickets for
-   confirmed problems (tracker-side intent).
+
+6. **Report and record.** Mark the run complete/failed/aborted; organize the report by the
+   three categories, each problem carrying evidence (case, action steps, expected, actual,
+   screenshot or snapshot path); end with a conclusion and a recommended next step; open
+   app-repo tickets for confirmed problems (tracker-side intent).
    *Done when: every problem is classified with evidence, the report ends with a
    conclusion + next step, and confirmed problems are ticketed.*
 

@@ -13,24 +13,30 @@ Keep the verification index honest: scan it for stale runs (git-driven), re-veri
 drifted, and forget records that lost their meaning. Invoked by name — "use web-maintain to
 check what needs re-testing".
 
-Run the **web-verify** discipline for staleness, retention, and verdicts.
+Run the **web-verify** discipline for staleness, retention, and verdicts. The scan and
+retention are computed by `.agent-browser/scripts/agent-browser-derive` — you decide what
+the computed facts mean.
 
 ## Steps
 
-1. **Scan and record.** `.agent-browser/scripts/agent-browser-stale scan --mark` — computes staleness and records
-   it on the index. Present the result: run, reason (provenance-change / ui-change / age), severity.
+1. **Scan and record.** `agent-browser-derive stale --mark` — computes staleness and records
+   it on the index. Present the result: run, reason (provenance-change / ui-change / age),
+   severity.
    *Done when: the stale list is presented with reasons, and the user chose a scope.*
-2. **Tidy by agreement.** `.agent-browser/scripts/agent-browser-stale tidy --dry-run` — preview what would be
+
+2. **Tidy by agreement.** `agent-browser-derive tidy --dry-run` — preview what would be
    forgotten (superseded beyond the keep window, content rewritten past the commit horizon,
    dead by age). Review with the user, then `--apply` for the agreed scope.
    *Done when: the index reflects the retention policy; each non-superseded drop was
    user-confirmed.*
+
 3. **Re-verify what drifted — automatically.** Every stale run is re-verified before it is
    trusted again: rerun its flow with the owning skill (web-logic for logic plans,
    web-smoke for flows, web-checker for checkpoints); the new run supersedes the old.
    Re-verification is the autonomy contract, not a question — ask only when a re-run is
    irreversible or expensive.
    *Done when: every stale run is re-verified (superseded) or consciously dropped.*
+
 4. **Report.** Present: what was stale, why, what was re-verified, what was forgotten, and
    the current verification state.
    *Done when: the current verification state is presented, and every stale run is either

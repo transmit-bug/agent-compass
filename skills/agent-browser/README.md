@@ -41,11 +41,10 @@ business (user-invoked)                  primitive (model-invoked)    operation 
 │  web-setup    app onboarding │                     ▼
 └──────────┬───────────────────┘                     ▼
            │  web-router (entry, model-invoked, routes)   web-verify ships the suite's machinery:
-           │                                              scripts/agent-browser-run       (run lifecycle + assess)
-           │                                              scripts/agent-browser-stale     (staleness scan + tidy)
-           │                                              scripts/agent_browser_common.py (shared renderer)
+           │                                              scripts/agent-browser-derive (derive: render | stale | tidy)
            │                                              references/session-model.md     (contract, owned by web-verify)
-           │                                              web-setup bootstraps scripts/ into .agent-browser/scripts/
+           │                                              web-setup bootstraps the script into .agent-browser/scripts/
+           │                                              records are written by the agent; status/orient are derived
 ```
 
 Business skills are user-invoked (`disable-model-invocation: true`, zero context load) —
@@ -63,10 +62,12 @@ npx skills add transmit-bug/agent-compass --skill web-router --skill web-verify 
   --skill web-dev --skill web-maintain --skill web-logic
 ```
 
-The skills CLI installs per-skill folders (SKILL.md only) — the suite's scripts and
+The skills CLI installs per-skill folders (SKILL.md only) — the suite's script and
 contract therefore ship inside **web-verify** (`scripts/`, `references/`) and **web-setup**
 bootstraps them into the app's `.agent-browser/scripts/` on onboarding, so every skill
-calls the stable app-relative path.
+calls the stable app-relative path. The agent writes the records itself
+(`.agent-browser/index.json`, schema in session-model.md); `agent-browser-derive` only
+derives status, the orient doc, staleness, and retention.
 
 Extending: a new web workflow = a new `<name>/SKILL.md` in this directory (user-invoked),
 invoking the web-verify discipline, registered in this table + skills-lock.json.

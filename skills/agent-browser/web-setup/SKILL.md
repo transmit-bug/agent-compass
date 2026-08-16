@@ -23,36 +23,34 @@ layer is installed (`agent-browser skills get core` answers); if a command fails
 "not found", install it (`npm i -g agent-browser && agent-browser install`) with the
 user's go-ahead — a machine-level change.
 
-The suite's scripts ship with the **web-verify** skill; this skill bootstraps them into the
-app's state home, so every later skill calls a stable path — `.agent-browser/scripts/…` —
-no matter where the skills were installed.
+The derive script ships with **web-verify**; this skill bootstraps it into the app's
+state home, so every later skill calls a stable path — `.agent-browser/scripts/…` — no
+matter where the skills were installed.
 
 Run the **web-verify** discipline for perception and the autonomy gate.
 
 ## Steps
 
-1. **Install the suite scripts into the state home.** Copy the run-lifecycle and staleness
-   scripts (`agent-browser-run`, `agent-browser-stale`, `agent_browser_common.py`) from the
+1. **Install the derive script into the state home.** Copy `agent-browser-derive` from the
    installed web-verify skill — this skill's sibling in the skills root (`../web-verify/`
-   from here; find it as `web-verify/scripts/agent-browser-run` if the root is unknown) —
-   into `.agent-browser/scripts/` and chmod +x. If no local copy is found, fetch the three
-   files from the repo
-   (`https://raw.githubusercontent.com/transmit-bug/agent-compass/main/skills/agent-browser/web-verify/scripts/`).
-   *Done when: `.agent-browser/scripts/agent-browser-run` answers `--help` (and is committed
-   with the state home, so clones need no re-bootstrap).*
+   from here; find it as `web-verify/scripts/agent-browser-derive` if the root is
+   unknown) — into `.agent-browser/scripts/` and chmod +x. If no local copy is found,
+   fetch it from the repo
+   (`https://raw.githubusercontent.com/transmit-bug/agent-compass/main/skills/agent-browser/web-verify/scripts/agent-browser-derive`).
+   *Done when: `.agent-browser/scripts/agent-browser-derive` answers `--help` (and is
+   committed with the state home, so clones need no re-bootstrap).*
 
-2. **Scaffold the state home.** `.agent-browser/scripts/agent-browser-run init` — creates
-   `.agent-browser/` (empty records + orient doc) and appends `.agent-browser/runs/` to
-   `.gitignore` (idempotent).
+2. **Scaffold the state home.** `.agent-browser/scripts/agent-browser-derive init` —
+   creates `.agent-browser/` (empty records + orient doc) and appends
+   `.agent-browser/runs/` to `.gitignore` (idempotent).
    *Done when: `.agent-browser/index.md` exists and the runs dir is gitignored.*
 
 3. **Discover how to run the app.** Launch the app the way a fresh session would — dev
    server, mock backend if that's the default — and wait for it to answer (a deterministic
-   `wait`: element / `--url` / `--text`, never a bare timeout).
-   One launch, for observation: note the facts this machine forces — the exact launch
-   command, the port (a taken default port is a fact), what the UI can do without real
-   hardware. Write them to `docs/agent-browser/app-notes.md`; re-run `init` so the orient
-   doc lists it.
+   `wait`: element / `--url` / `--text`, never a bare timeout). One launch, for
+   observation: note the facts this machine forces — the exact launch command, the port (a
+   taken default port is a fact), what the UI can do without real hardware. Write them to
+   `docs/agent-browser/app-notes.md`; re-run `init` so the orient doc lists it.
    *Done when: app-notes records a launch a fresh session can reproduce — command, port,
    mock-backend behavior — and the orient doc links it under Durable docs.*
 
@@ -87,7 +85,7 @@ Run the **web-verify** discipline for perception and the autonomy gate.
    the next action. For the lifecycle at a glance and cross-session continuation, the
    usage guide is [references/usage.md](references/usage.md) (ships with this skill).
    *Done when: the orient doc reads correctly and names the next action — usually picking
-   a feature ticket and starting a run with the owning skill.*
+   a feature ticket and starting a run.*
 
 ## Judgment
 

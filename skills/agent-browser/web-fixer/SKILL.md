@@ -16,7 +16,9 @@ appearance. Closed loop: judge → fix → reload → re-judge, until the gap li
 The reference is fixed — never "fixed" by editing it. Invoked by name — "use web-fixer to
 make the page match this design".
 
-Run the **web-verify** discipline for the run model, perception, and verdicts.
+Run the **web-verify** discipline for perception, verdicts, and recording. Records are
+written by hand into `.agent-browser/index.json` (schema in session-model.md); re-render
+with `.agent-browser/scripts/agent-browser-derive render` when you finish.
 
 ## Steps
 
@@ -26,20 +28,22 @@ Run the **web-verify** discipline for the run model, perception, and verdicts.
    wrong text, wrong state, broken layout. Agree the stop threshold up front: structural
    gaps all closed; for appearance work, the user's confirmation.
    *Done when: the gap list is complete and the stop threshold is agreed.*
-2. **Start the run.** `.agent-browser/scripts/agent-browser-run start <app> <flow> --skill web-fixer`.
-   *Done when: the run dir exists and the index shows it running.*
-3. **Close gaps one at a time, biggest first.** Judge → apply the smallest change that closes
-   the gap → reload → re-judge → record a checkpoint verdict.
+
+2. **Close gaps one at a time, biggest first.** Judge → apply the smallest change that
+   closes the gap → reload → re-judge → record a checkpoint verdict per gap.
    *Done when: the gap list is empty and the threshold is met.*
-4. **On resistance, re-orient.** Two attempts on the same gap without progress: re-snapshot
-   and re-describe the element, and check the app did not crash or hang before touching code
-   again. A change that made things worse is reverted (git) before the next attempt.
+
+3. **On resistance, re-orient.** Two attempts on the same gap without progress: re-snapshot
+   and re-describe the element, and check the app did not crash or hang before touching
+   code again. A change that made things worse is reverted (git) before the next attempt.
    *Done when: the loop is converging, or the escape hatch fired.*
-5. **Escape hatch.** N attempts on one gap (manifest `thresholds.maxAttempts`, default 3) →
+
+4. **Escape hatch.** N attempts on one gap (manifest `thresholds.maxAttempts`, default 3) →
    stop, report the remaining diff with screenshots, ask the user — do not guess further.
    *Done when: the escape hatch result is reported.*
-6. **Finish with the report.** `.agent-browser/scripts/agent-browser-run finish <app> <flow> --status
-   complete|failed|aborted`.
+
+5. **Finish with the report.** Mark the run complete/failed/aborted; write the report
+   naming gaps closed, files changed, evidence paths.
    *Done when: the report names gaps closed, files changed, evidence paths.*
 
 ## Judgment

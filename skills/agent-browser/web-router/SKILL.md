@@ -8,8 +8,8 @@ allowed-tools:
 # Web Router — the deriving entry for the agent-browser suite
 
 Model-invoked routing entry. The business skills stay user-invoked and directly callable —
-this router is an optional on-ramp for orientation, never a gate, and no sequence is enforced
-after it runs. The lifecycle arc is a map, not a pipeline.
+this router is an optional on-ramp for orientation, never a gate, and no sequence is
+enforced after it runs. The lifecycle arc is a map, not a pipeline.
 
 ## Route — the arc, anchored
 
@@ -30,22 +30,25 @@ read them, they are canonical; the route is re-derived every time, never memoriz
 
 ## Steps
 
-1. **Read the map.** The suite's index is the installed skill set: locate this skill's
-   siblings — `../web-dev/SKILL.md`, `../web-checker/SKILL.md`, `../web-fixer/SKILL.md`,
-   `../web-smoke/SKILL.md`, `../web-maintain/SKILL.md`, `../web-logic/SKILL.md`,
-   `../web-setup/SKILL.md` — next to this one in the skills root (in-repo that is
-   `skills/agent-browser/`). Each frontmatter `description` is the canonical gloss; build
-   the route from what they say — never from memory of a previous routing. (The group
-   README adds layout context when present, but it is not installed with the skills.)
+1. **Read the map.** Locate this skill's siblings — `../web-dev/SKILL.md`,
+   `../web-checker/SKILL.md`, `../web-fixer/SKILL.md`, `../web-smoke/SKILL.md`,
+   `../web-maintain/SKILL.md`, `../web-logic/SKILL.md`, `../web-setup/SKILL.md` — next to
+   this one in the skills root (in-repo that is `skills/agent-browser/`). Each frontmatter
+   `description` is the canonical gloss; build the route from what they say — never from
+   memory of a previous routing. (The group README adds layout context when present, but
+   it is not installed with the skills.)
    *Done when: you can name what each skill does in the ask's own terms.*
+
 2. **Read the orient doc.** The app's `.agent-browser/index.md`: derived status, next
    actions, assessment gists. This answers "where does the app stand" and what is stale,
    failing, or blocked. (The app repo is the user's cwd or the one they named.)
    *Done when: you know the app's current status and its stale/failing/blocked items.*
-3. **Classify the ask onto the arc.** Match the user's intent to one route; check the match
-   against that skill's own description. One slice ≈ one session — recommend one skill, not
-   a tour.
+
+3. **Classify the ask onto the arc.** Match the user's intent to one route; check the
+   match against that skill's own description. One slice ≈ one session — recommend one
+   skill, not a tour.
    *Done when: exactly one skill + its entry step fits, or the ask is genuinely ambiguous.*
+
 4. **Recommend and point, then stop.** Name the skill and its entry step; for lifecycle
    asks, name the orient-doc next action (stale → re-verify, failing → check/fix, blocked →
    resolve the blocker). Never fire the skill yourself — the user invokes it by name.

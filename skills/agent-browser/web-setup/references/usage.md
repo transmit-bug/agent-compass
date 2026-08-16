@@ -22,8 +22,8 @@ skills): `docs/blueprint.md` and `docs/adr/0002-web-app-lifecycle-model.md`.
 
 ### App repo, once
 
-Run the **web-setup** skill — executed by the agent, not the user: it bootstraps the suite
-scripts into `.agent-browser/scripts/`, scaffolds `.agent-browser/` (empty records + orient
+Run the **web-setup** skill — executed by the agent, not the user: it bootstraps the derive
+script into `.agent-browser/scripts/`, scaffolds `.agent-browser/` (empty records + orient
 doc), gitignores `.agent-browser/runs/`, records how to run the app
 (`docs/agent-browser/app-notes.md`, linked from the orient doc — one launch to observe the
 launch command and port), and notes auth facts (or records "no auth" so runs never re-ask).
@@ -64,9 +64,11 @@ orient and start a run.*
 | Staleness / tidy | web-maintain | `scan --mark` + `tidy --dry-run` / `--apply` |
 
 Every stage runs the **web-verify** discipline (run model, perception, verdicts,
-staleness) and writes through the same scripts (`agent-browser-run`, `agent-browser-stale`
-— short for `.agent-browser/scripts/…`, bootstrapped by web-setup). Only the workflow
-differs; the worked flow for one stage (web-logic) is spelled out in that skill's SKILL.md.
+staleness) and records through the same shape — `.agent-browser/index.json`, written by
+the agent as it goes; status and the orient doc are derived by
+`agent-browser-derive render` (short for `.agent-browser/scripts/agent-browser-derive`,
+bootstrapped by web-setup). Only the workflow differs; the worked flow for one stage
+(web-logic) is spelled out in that skill's SKILL.md.
 
 ## Cross-session continuation
 

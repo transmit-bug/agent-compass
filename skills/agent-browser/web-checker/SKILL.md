@@ -12,10 +12,12 @@ allowed-tools:
 # Web Checker (business layer)
 
 Judge what is on screen against the **ground truth** and emit exactly one **verdict** per
-checkpoint. Read-only: it checks, it does not change code. Invoked by name — "use
-web-checker to check X against the expected result".
+checkpoint. Read-only over the app's code: it checks, it does not change code. Invoked by
+name — "use web-checker to check X against the expected result".
 
-Run the **web-verify** discipline for the run model, perception, and verdicts.
+Run the **web-verify** discipline for perception, verdicts, and recording. Records are
+written by hand into `.agent-browser/index.json` (schema in session-model.md); re-render
+with `.agent-browser/scripts/agent-browser-derive render` when you finish.
 
 ## Steps
 
@@ -24,22 +26,24 @@ Run the **web-verify** discipline for the run model, perception, and verdicts.
    an existing expectation in `.agent-browser/expectations/` when one exists — never
    re-ask for ground truth already recorded; write one when a check recurs and none does.
    *Done when: every checkpoint has a checkable expected.*
-2. **Start the run.** `.agent-browser/scripts/agent-browser-run start <app> <flow> --skill web-checker`.
-   *Done when: the run dir exists and the index shows it running.*
-3. **Judge each checkpoint, structure-first.** snapshot/read/get/eval, compare against the
-   expected, record the verdict. Act only to reach the state under judgment — one action,
-   read its output, then judge.
+
+2. **Judge each checkpoint, structure-first.** snapshot/read/get/eval, compare against the
+   expected, record the verdict (one per checkpoint, with evidence). Act only to reach the
+   state under judgment — one action, read its output, then judge.
    *Done when: every checkpoint has exactly one verdict.*
-4. **Visual checkpoints (branch).** `screenshot --annotate`, judge the pixels against the
+
+3. **Visual checkpoints (branch).** `screenshot --annotate`, judge the pixels against the
    reference image; a pixel signal is optional evidence, the user's confirmation is the
    threshold.
    *Done when: every visual checkpoint has a confirmed verdict.*
-5. **Assess holistically (optional).** For a full review, record structured verdicts —
-   `.agent-browser/scripts/agent-browser-run assess <app> <scope> --json '{completeness, logic, flow, ui, gist}'` —
-   per feature, or scope `app` for app-level concerns.
+
+4. **Assess holistically (optional).** For a full review, record structured verdicts
+   (completeness / logic / flow / ui + one-line gist) for the feature, or scope `app` for
+   app-level concerns.
    *Done when: every reviewed feature (or the app) has a recorded assessment.*
-6. **Finish with the report.** `.agent-browser/scripts/agent-browser-run finish <app> <flow> --status
-   complete|failed|aborted`.
+
+5. **Finish with the report.** Mark the run complete/failed/aborted; write the report
+   delivering verdict → actions taken → evidence paths → next step.
    *Done when: the report delivers verdict → actions taken → evidence paths → next step.*
 
 ## Judgment — the verdicts
