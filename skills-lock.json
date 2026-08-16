@@ -52,7 +52,7 @@
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/agent-browser/web-verify/SKILL.md",
-      "computedHash": "3cae2b8b45f4f5d11e84e0675b6e87ecfdefda546efb4f9ba413176316fad427"
+      "computedHash": "6ab5dbe71e0070920c624c043982237f6b04820e2703db945776ca8b6fc4d83d"
     },
     "web-dev": {
       "source": "transmit-bug/agent-compass",
@@ -135,7 +135,7 @@
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/agent-browser/web-setup/SKILL.md",
-      "computedHash": "e25f3ad06fe3f7dde5fc0cc6f757c2cacdcad914ceb2f8438496af9850c2a527"
+      "computedHash": "5aa42face3b007ae540d55ada164ab29431fd1563d3e6b49213f69e1d01c70c5"
     }
   }
 }

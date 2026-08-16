@@ -92,5 +92,10 @@ Run the **web-verify** discipline for perception and the autonomy gate.
 - **Record, don't prove.** Setup's deliverable is the orient doc plus the notes and
   decisions it links — what every later session reads first. The one launch exists only
   to feed app-notes; the app's verification is the business skills' job.
+- **Delta only, link the rest.** If the project already has a domain doc (CONTEXT.md /
+  README / ADR), link it from the orient doc and write into app-notes only the facts the
+  project's own docs do not state — launch command, port, mock-backend behavior,
+  decisions. Never restate what the repo already documents: restatements drift and
+  duplicate.
 - Re-running setup is safe (init and the script copy are idempotent); re-doing auth is the
   only interactive part.

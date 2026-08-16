@@ -173,7 +173,7 @@ The suite's continuation depends on records that stay true:
         └── report.md          # human report, written by the owning skill at finish
 
 docs/agent-browser/             # committed — durable knowledge (git-tracked)
-├── app-notes.md                # how to run, decisions (web-setup)
+├── app-notes.md                # how to run + decisions — delta only (web-setup: links the repo's own docs, never restates them)
 └── scenarios/                  # the scenario library (web-logic / web-smoke)
     ├── README.md               # navigation index (id → what, priority, depends)
     ├── smoke/ · setup/ · business/ · flows/
