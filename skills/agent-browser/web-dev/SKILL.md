@@ -26,7 +26,7 @@ Run the **web-verify** discipline for the run model, perception, and verdicts.
    dev URL.
    *Done when: the app is reachable and a baseline checkpoint is recorded.*
 3. **Implement against acceptance points.** Edit code, then verify per point: reload →
-   structure check → `errors --bail` for zero blocking errors → record a checkpoint verdict.
+   structure check → `errors` reports none for zero blocking errors → record a checkpoint verdict.
    *Done when: every acceptance point has a passing structural check and no blocking errors.*
 4. **Review visual changes.** When the work is appearance-visible: screenshot and confirm
    with the user — human confirmation is the threshold.

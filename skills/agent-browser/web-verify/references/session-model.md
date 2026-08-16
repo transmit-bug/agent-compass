@@ -30,12 +30,12 @@ model, records, storage, lifecycle, and the orient doc.
 | 1 structure | `snapshot -i` (accessibility tree + `@eN` refs) | layout, elements, roles, hierarchy |
 | 2 content | `read`, `get text/attr/value/count/title/url` | rendered content, values, state |
 | 3 compute | `eval --stdin` (JS) | derived state: counts, computed styles, conditions |
-| 4 health | `console`, `errors --bail` | page logs and errors — deterministic, zero LLM |
+| 4 health | `console`, `errors` | page logs and errors — deterministic, zero LLM |
 | 5 pixels | `screenshot [--annotate]` | only: appearance tasks, DOM-less content, human evidence |
 
 Discipline: after any page-changing action, `wait` (element / `--text` / `--url` / `--fn`)
 then re-`snapshot` — refs go stale the moment the page changes. Prefer deterministic
-assertions (`wait --text`, `get count`, `eval` returning a boolean, `errors --bail`) for
+assertions (`wait --text`, `get count`, `eval` returning a boolean, `errors` empty) for
 pass/fail; reserve LLM judgment for ambiguity (the **Unsure** verdict).
 
 ## Run model

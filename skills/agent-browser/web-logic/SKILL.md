@@ -5,6 +5,8 @@ disable-model-invocation: true
 allowed-tools:
   - Bash
   - Read
+  - Write
+  - Edit
 ---
 
 # Web Logic (business layer)

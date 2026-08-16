@@ -5,6 +5,8 @@ disable-model-invocation: true
 allowed-tools:
   - Bash
   - Read
+  - Write
+  - Edit
 ---
 
 # Web Smoke (business layer)
@@ -33,7 +35,7 @@ Run the **web-verify** discipline for the run model, perception, and verdicts.
 4. **Walk the flow, one step at a time.** For each step: act (one action, or one `eval
    --stdin` for a state change) → wait (deterministic: element / `--text` / `--url` /
    `--fn`, never a bare timeout) → assert structure-first (`snapshot -i`, `read`, `get
-   count`, `eval`; `console`/`errors --bail` for health; screenshot only for appearance or
+   count`, `eval`; `console`/`errors` for health; screenshot only for appearance or
    human evidence) → record the checkpoint verdict.
    *Done when: every step has a recorded verdict — nothing left unasserted.*
 5. **Stop on a failing step.** Do not skip ahead or guess the rest. Show the failure and the

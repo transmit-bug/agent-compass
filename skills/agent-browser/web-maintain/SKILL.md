@@ -33,6 +33,8 @@ Run the **web-verify** discipline for staleness, retention, and verdicts.
    *Done when: every stale run is re-verified (superseded) or consciously dropped.*
 4. **Report.** Present: what was stale, why, what was re-verified, what was forgotten, and
    the current verification state.
+   *Done when: the current verification state is presented, and every stale run is either
+   re-verified (superseded) or consciously dropped.*
 
 ## Judgment
 

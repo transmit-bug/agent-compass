@@ -40,7 +40,7 @@
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/agent-browser/web-checker/SKILL.md",
-      "computedHash": "eccd038942635fd8a37eabd70ff7d12abe7b454abb60d7a5058e898e9583ac2c"
+      "computedHash": "103544dcd50059611578f4292d04784a71e13d0be782bb36f24eb8f514cced6d"
     },
     "web-router": {
       "source": "transmit-bug/agent-compass",
@@ -52,13 +52,13 @@
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/agent-browser/web-verify/SKILL.md",
-      "computedHash": "724863849f3bbdcfc3bea4ae1e5e84b6a21cd68ce61382efb77a4e4077a5a92b"
+      "computedHash": "6cde0f287a61db56c35a4365f9a9e28b7cf53e36a5b91fa897e87e85e0ee3c59"
     },
     "web-dev": {
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/agent-browser/web-dev/SKILL.md",
-      "computedHash": "ca67f674716f88b4074421fae4b6a32a407954188c5aa590f2306fb8b6372a9c"
+      "computedHash": "d0f9439c9709d41f47fedd8d98e22923f42bff0377454e83d3c4331db974c557"
     },
     "web-fixer": {
       "source": "transmit-bug/agent-compass",
@@ -70,19 +70,19 @@
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/agent-browser/web-maintain/SKILL.md",
-      "computedHash": "ee32f68418c227ca86903ada74f2450228de4b1c7cfe313092a6a50b21d9da03"
+      "computedHash": "5286c7df9237acc84d0d7a81c5e1e74292bd0103b24823562570037fce9ba0a2"
     },
     "web-smoke": {
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/agent-browser/web-smoke/SKILL.md",
-      "computedHash": "516105d3c047b6a2925105f9eafc7417c89993fd001b20fb01cb570129934ee0"
+      "computedHash": "2309148586087e435eab722b6eaf744b36b7af130927a96eb22153f8f109b909"
     },
     "web-logic": {
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/agent-browser/web-logic/SKILL.md",
-      "computedHash": "8958b686e6595ebd07127d7863e6870988cbe087e20354969d061c54234fc700"
+      "computedHash": "ef46bada1f66da4f208377b0dc66781b959bf3a8b1179f91977b252f2f4e1266"
     },
     "frontend-design": {
       "source": "transmit-bug/agent-compass",

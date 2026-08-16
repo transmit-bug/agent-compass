@@ -109,6 +109,8 @@ def cmd_checkpoint(args):
         sys.exit("checkpoint --json must be valid JSON")
     if not isinstance(cp, dict) or "step" not in cp or "verdict" not in cp:
         sys.exit("checkpoint --json needs at least {step, verdict}")
+    if cp.get("verdict") not in ("pass", "fail", "unsure"):
+        sys.exit("checkpoint verdict must be one of pass|fail|unsure")
     path = run_path(args.app, args.flow)
     run = load_json(path, None)
     if not run:
@@ -187,6 +189,7 @@ def cmd_finish(args):
         sys.exit(f"no run for {args.app}/{args.flow} — start it first")
     run["status"] = args.status
     run["finishedAt"] = now_iso()
+    run["verdict"] = overall_verdict(run["checkpoints"]) if args.status in ("complete", "failed") else "-"
     save_json(path, run)
 
     index = load_index()
