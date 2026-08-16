@@ -30,9 +30,13 @@ read them, they are canonical; the route is re-derived every time, never memoriz
 
 ## Steps
 
-1. **Read the map.** The group `README.md` is the index; every `web-*/SKILL.md` frontmatter
-   `description` is the canonical gloss. Build the route from what they say — never from
-   memory of a previous routing.
+1. **Read the map.** The suite's index is the installed skill set: locate this skill's
+   siblings — `../web-dev/SKILL.md`, `../web-checker/SKILL.md`, `../web-fixer/SKILL.md`,
+   `../web-smoke/SKILL.md`, `../web-maintain/SKILL.md`, `../web-logic/SKILL.md`,
+   `../web-setup/SKILL.md` — next to this one in the skills root (in-repo that is
+   `skills/agent-browser/`). Each frontmatter `description` is the canonical gloss; build
+   the route from what they say — never from memory of a previous routing. (The group
+   README adds layout context when present, but it is not installed with the skills.)
    *Done when: you can name what each skill does in the ask's own terms.*
 2. **Read the orient doc.** The app's `.agent-browser/index.md`: derived status, next
    actions, assessment gists. This answers "where does the app stand" and what is stale,

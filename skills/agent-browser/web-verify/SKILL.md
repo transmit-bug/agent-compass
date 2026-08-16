@@ -1,6 +1,6 @@
 ---
 name: web-verify
-description: Verification discipline for the agent-browser suite — the run model, perception ladder, verdicts, staleness/retention, and autonomy gate. Use when running or judging a verification run (start, checkpoint, finish, supersede), recording verdicts with evidence, perceiving a page structure-first, checking what is stale, or deciding act-vs-ask while verifying a web app.
+description: Verification discipline for the agent-browser suite — the run model, perception ladder, verdicts, staleness/retention, and autonomy gate. Use when running or judging a verification run (start, checkpoint, finish, supersede), perceiving a page structure-first, checking what is stale, or deciding act-vs-ask while verifying a web app.
 allowed-tools:
   - Bash
   - Read
@@ -11,7 +11,9 @@ allowed-tools:
 Model-invoked primitive owning the verification discipline for the agent-browser suite;
 mode skills invoke it by prose — "run the web-verify discipline" — and inherit what follows.
 The contract (shapes, storage, command tables) is
-[session-model.md](../references/session-model.md), owned here.
+[references/session-model.md](references/session-model.md), owned here; the run-lifecycle
+and staleness scripts ship with this skill (`scripts/`), bootstrapped by web-setup into the
+app's `.agent-browser/scripts/` so the state home is self-contained.
 
 ## Run model — write-as-you-go
 
@@ -47,8 +49,8 @@ once is never re-asked; the answer is written where the next session reads it.
 
 ## Boundaries
 
-- **Discipline lives here** (prose). **Computation lives in the scripts** (`agent-browser-run`,
-  `agent-browser-stale`). **The browser surface lives in the CLI** — `agent-browser skills
-  get core`, never hardcoded. Install the operation layer once:
+- **Discipline lives here** (prose). **Computation lives in the scripts** (`.agent-browser/scripts/agent-browser-run`,
+  `agent-browser-stale`, shipped with this skill, bootstrapped by web-setup). **The browser surface lives in the CLI** — `agent-browser
+  skills get core`, never hardcoded. Install the operation layer once:
   `npm i -g agent-browser && agent-browser install`.
 - The primitive is invoked by mode skills; it never drives the browser itself.

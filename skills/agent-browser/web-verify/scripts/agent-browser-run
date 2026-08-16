@@ -84,9 +84,11 @@ def cmd_start(args):
     save_json(run_path(args.app, args.flow), run)
 
     index = load_index()
-    # supersede the previous complete run of the same app+slug
+    # supersede the previous terminal run of the same app+slug (a failed/aborted run
+    # is replaced too, so tidy can drop it inside the keep window)
     for r in index["runs"]:
-        if r["app"] == args.app and r["slug"] == args.flow and r["status"] == "complete" and not r.get("supersededBy"):
+        if (r["app"] == args.app and r["slug"] == args.flow
+                and r["status"] != "running" and not r.get("supersededBy")):
             r["supersededBy"] = run_id
     index["runs"].append({
         "id": run_id, "app": args.app, "slug": args.flow, "skill": run["skill"],
@@ -192,7 +194,7 @@ def cmd_finish(args):
         if r["id"] == run["id"]:
             r["status"] = run["status"]
             r["finishedAt"] = run["finishedAt"]
-            r["verdict"] = overall_verdict(run["checkpoints"]) if args.status == "complete" else "-"
+            r["verdict"] = overall_verdict(run["checkpoints"]) if args.status in ("complete", "failed") else "-"
     save_index(index)
 
     report = render_report(run)
@@ -270,13 +272,14 @@ def cmd_prune(args):
     if not os.path.isdir(RUNS):
         print("nothing to prune")
         return
-    cutoff = datetime.datetime.now(datetime.timezone.utc).timestamp() - args.evidence * 86400
-    removed = 0
-    for app in os.listdir(RUNS):
+    now = datetime.datetime.now(datetime.timezone.utc).timestamp()
+    cutoff = now - args.evidence * 86400
+    flows = {}  # (app, flow) -> [(dir, mtime)]
+    for app in sorted(os.listdir(RUNS)):
         app_dir = os.path.join(RUNS, app)
         if not os.path.isdir(app_dir):
             continue
-        for flow in os.listdir(app_dir):
+        for flow in sorted(os.listdir(app_dir)):
             d = os.path.join(app_dir, flow)
             if not os.path.isdir(d):
                 continue
@@ -284,10 +287,20 @@ def cmd_prune(args):
                 mtime = os.path.getmtime(d)
             except OSError:
                 mtime = 0
-            if mtime < cutoff:
+            flows.setdefault((app, flow), []).append((d, mtime))
+    for lst in flows.values():
+        lst.sort(key=lambda x: x[1], reverse=True)
+    # newest --keep per (app, flow) are protected from the age cutoff
+    protected = {d for lst in flows.values() for d, _ in lst[: args.keep]}
+    removed = []
+    for lst in flows.values():
+        for i, (d, mtime) in enumerate(lst):
+            if d in protected:
+                continue
+            if i >= args.keep or mtime < cutoff:  # cap at K, and anything past the age
                 shutil.rmtree(d)
-                removed += 1
-    print(json.dumps({"removedEvidenceDirs": removed, "note": "index untouched — tidy handles index retention"},
+                removed.append(d)
+    print(json.dumps({"removedEvidenceDirs": len(removed), "note": "index untouched — tidy handles index retention"},
                      ensure_ascii=False))
 
 

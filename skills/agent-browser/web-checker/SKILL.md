@@ -22,7 +22,7 @@ Run the **web-verify** discipline for the run model, perception, and verdicts.
    an existing expectation in `.agent-browser/expectations/` when one exists — never
    re-ask for ground truth already recorded; write one when a check recurs and none does.
    *Done when: every checkpoint has a checkable expected.*
-2. **Start the run.** `../scripts/agent-browser-run start <app> <flow> --skill web-checker`.
+2. **Start the run.** `.agent-browser/scripts/agent-browser-run start <app> <flow> --skill web-checker`.
    *Done when: the run dir exists and the index shows it running.*
 3. **Judge each checkpoint, structure-first.** snapshot/read/get/eval, compare against the
    expected, record the verdict. Act only to reach the state under judgment — one action,
@@ -33,10 +33,10 @@ Run the **web-verify** discipline for the run model, perception, and verdicts.
    threshold.
    *Done when: every visual checkpoint has a confirmed verdict.*
 5. **Assess holistically (optional).** For a full review, record structured verdicts —
-   `../scripts/agent-browser-run assess <app> <scope> --json '{completeness, logic, flow, ui, gist}'` —
+   `.agent-browser/scripts/agent-browser-run assess <app> <scope> --json '{completeness, logic, flow, ui, gist}'` —
    per feature, or scope `app` for app-level concerns.
    *Done when: every reviewed feature (or the app) has a recorded assessment.*
-6. **Finish with the report.** `../scripts/agent-browser-run finish <app> <flow> --status
+6. **Finish with the report.** `.agent-browser/scripts/agent-browser-run finish <app> <flow> --status
    complete|failed|aborted`.
    *Done when: the report delivers verdict → actions taken → evidence paths → next step.*
 

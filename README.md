@@ -128,16 +128,18 @@ the run model, storage, and retention contract is shared in
 - **web-router** — model-invoked deriving entry: routes a lifecycle ask to the right skill
   (reads README + frontmatter, never a hand-maintained gloss); entry, not gate
 - **web-setup** — onboard an app repo: scaffold `.agent-browser/` + orient doc, gitignore the
-  evidence, record how to run the app, check the operation layer and vault
+  evidence, record how to run the app, scaffold the scenario library, note auth facts
 - **web-verify** — model-invoked primitive owning the verification discipline (run model,
   perception ladder, verdicts, staleness/retention, autonomy gate); every mode skill
   invokes it by one prose line
 - **web-dev** — build loop: edit → reload → check structure/errors → iterate to acceptance
 - **web-checker** — judge a rendered page against expected structure (or a reference image) → verdicts
 - **web-fixer** — converge a page to a fixed reference: judge → fix → reload, until the gap list is empty
-- **web-smoke** — verify a defined core flow end-to-end with per-step assertions → PASS/FAIL
+- **web-smoke** — verify a core flow end-to-end from a flows/ or smoke/ scenario → PASS/FAIL
 - **web-maintain** — git-driven staleness scan + selective forgetting (tidy)
-- **web-logic** — test a web app's business logic: infer it from source, generate test cases, run them, classify problems three ways (implementation mismatch / logic flaw / wrong inference)
+- **web-logic** — test a web app's business logic: anchor in the scenario library, derive a
+  business/ scenario from source, run its cases, classify problems three ways (implementation
+  mismatch / logic flaw / wrong inference)
 
 The suite is **structure-first, vision-on-demand**: perception
 runs through the DOM/accessibility tree (snapshot → read → eval → console/errors); pixels are

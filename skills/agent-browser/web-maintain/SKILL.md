@@ -17,10 +17,10 @@ Run the **web-verify** discipline for staleness, retention, and verdicts.
 
 ## Steps
 
-1. **Scan and record.** `../scripts/agent-browser-stale scan --mark` — computes staleness and records
+1. **Scan and record.** `.agent-browser/scripts/agent-browser-stale scan --mark` — computes staleness and records
    it on the index. Present the result: run, reason (provenance-change / ui-change / age), severity.
    *Done when: the stale list is presented with reasons, and the user chose a scope.*
-2. **Tidy by agreement.** `../scripts/agent-browser-stale tidy --dry-run` — preview what would be
+2. **Tidy by agreement.** `.agent-browser/scripts/agent-browser-stale tidy --dry-run` — preview what would be
    forgotten (superseded beyond the keep window, content rewritten past the commit horizon,
    dead by age). Review with the user, then `--apply` for the agreed scope.
    *Done when: the index reflects the retention policy; each non-superseded drop was

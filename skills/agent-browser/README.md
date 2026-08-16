@@ -6,21 +6,21 @@ operation layer (external, referenced not vendored). Two model-invoked layers (t
 user-invoked business skills.
 
 Usage guide (setup, first session, cross-session continuation):
-[docs/agent-browser-usage.md](../../docs/agent-browser-usage.md).
+[web-setup/references/usage.md](./web-setup/references/usage.md) — ships with web-setup.
 
 ## When to use which
 
 | Need | Skill |
 |---|---|
 | Which skill fits this web-app ask? | [web-router](./web-router/) — model-invoked entry; routes and points |
-| Set up / onboard an app repo | [web-setup](./web-setup/) — scaffold `.agent-browser/`, notes, vault, reachability |
+| Set up / onboard an app repo | [web-setup](./web-setup/) — scaffold `.agent-browser/`, the scenario library, how-to-run notes, auth facts |
 | Verification discipline (run model, perception, verdicts, staleness) | [web-verify](./web-verify/) — model-invoked primitive; every mode skill invokes it by prose |
 | Implement / develop a feature | [web-dev](./web-dev/) |
 | Does the page match expectations | [web-checker](./web-checker/) |
 | Fix until it matches a reference | [web-fixer](./web-fixer/) |
-| End-to-end core-flow verification | [web-smoke](./web-smoke/) |
+| End-to-end core-flow verification | [web-smoke](./web-smoke/) — walks a flows/ or smoke/ scenario |
 | Verify staleness / re-run / tidy | [web-maintain](./web-maintain/) |
-| Infer logic, generate cases, run, classify | [web-logic](./web-logic/) |
+| Infer logic, generate cases, run, classify | [web-logic](./web-logic/) — derives a business/ scenario from source |
 
 The lifecycle arc is a map, not a pipeline: each feature arcs spec → dev → check → fix →
 smoke → maintain, smoke is the gate. "Where does the app stand" is answered by the **orient
@@ -40,10 +40,12 @@ business (user-invoked)                  primitive (model-invoked)    operation 
 │  web-logic    logic testing  │                     │ shared
 │  web-setup    app onboarding │                     ▼
 └──────────┬───────────────────┘                     ▼
-           │  web-router (entry, model-invoked, routes)   scripts/agent-browser-run      (run lifecycle + assess)
-           │                                              scripts/agent-browser-stale    (staleness scan + tidy)
+           │  web-router (entry, model-invoked, routes)   web-verify ships the suite's machinery:
+           │                                              scripts/agent-browser-run       (run lifecycle + assess)
+           │                                              scripts/agent-browser-stale     (staleness scan + tidy)
            │                                              scripts/agent_browser_common.py (shared renderer)
            │                                              references/session-model.md     (contract, owned by web-verify)
+           │                                              web-setup bootstraps scripts/ into .agent-browser/scripts/
 ```
 
 Business skills are user-invoked (`disable-model-invocation: true`, zero context load) —
@@ -60,6 +62,11 @@ npx skills add transmit-bug/agent-compass --skill web-router --skill web-verify 
   --skill web-setup --skill web-smoke --skill web-checker --skill web-fixer \
   --skill web-dev --skill web-maintain --skill web-logic
 ```
+
+The skills CLI installs per-skill folders (SKILL.md only) — the suite's scripts and
+contract therefore ship inside **web-verify** (`scripts/`, `references/`) and **web-setup**
+bootstraps them into the app's `.agent-browser/scripts/` on onboarding, so every skill
+calls the stable app-relative path.
 
 Extending: a new web workflow = a new `<name>/SKILL.md` in this directory (user-invoked),
 invoking the web-verify discipline, registered in this table + skills-lock.json.

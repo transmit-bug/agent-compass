@@ -26,7 +26,7 @@ Run the **web-verify** discipline for the run model, perception, and verdicts.
    wrong text, wrong state, broken layout. Agree the stop threshold up front: structural
    gaps all closed; for appearance work, the user's confirmation.
    *Done when: the gap list is complete and the stop threshold is agreed.*
-2. **Start the run.** `../scripts/agent-browser-run start <app> <flow> --skill web-fixer`.
+2. **Start the run.** `.agent-browser/scripts/agent-browser-run start <app> <flow> --skill web-fixer`.
    *Done when: the run dir exists and the index shows it running.*
 3. **Close gaps one at a time, biggest first.** Judge → apply the smallest change that closes
    the gap → reload → re-judge → record a checkpoint verdict.
@@ -38,7 +38,7 @@ Run the **web-verify** discipline for the run model, perception, and verdicts.
 5. **Escape hatch.** N attempts on one gap (manifest `thresholds.maxAttempts`, default 3) →
    stop, report the remaining diff with screenshots, ask the user — do not guess further.
    *Done when: the escape hatch result is reported.*
-6. **Finish with the report.** `../scripts/agent-browser-run finish <app> <flow> --status
+6. **Finish with the report.** `.agent-browser/scripts/agent-browser-run finish <app> <flow> --status
    complete|failed|aborted`.
    *Done when: the report names gaps closed, files changed, evidence paths.*
 

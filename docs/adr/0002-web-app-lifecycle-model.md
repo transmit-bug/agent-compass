@@ -19,7 +19,7 @@ be derived from the code or an action is irreversible or expensive. Continuation
 **read-and-act**: a fresh session reads `index.md`, derives status and next actions, picks the
 most stale or most important open item, and acts; aborted runs resume from preserved checkpoints,
 stale verifications are re-run before any verdict is trusted, superseded evidence stays until the
-scripted retention tidy. Durable human-facing docs (flow recipes, assessment reports, app notes)
+scripted retention tidy. Durable human-facing docs (scenarios, assessment reports, app notes)
 live in the app repo's `docs/agent-browser/`, linked from the index — there are no handoff or
 orient ceremony files beyond the derived index.
 

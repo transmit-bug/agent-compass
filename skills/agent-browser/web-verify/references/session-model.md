@@ -41,8 +41,9 @@ pass/fail; reserve LLM judgment for ambiguity (the **Unsure** verdict).
 ## Run model
 
 A **run** is one traceable verification unit: `{worktree, app, slug, skill, branch, commit,
-startedAt}`. Slug = `<app>-<flow>`. Runs are keyed per worktree (`git rev-parse
---show-toplevel`) so parallel projects never collide.
+startedAt}`. `slug` is the flow name; the run `id` is `<app>-<flow>@<timestamp>`. Runs are
+keyed per worktree (`git rev-parse --show-toplevel`) and per app+flow, so parallel projects
+never collide.
 
 Lifecycle: `running → complete | failed | aborted → superseded | stale → forgotten`.
 
@@ -108,8 +109,10 @@ fresh session reads it first (web-router's orient step), then acts. Sections:
    resolve blockers, in-progress → resume; assessment concerns; open ticket refs collected
    from records (the agent consults the app tracker for their state).
 4. **Expectations** — the reusable ground truths (`expectations/*.md`) available to pin from.
-5. **Flows** — the verification plans (`flows/*.md`) available to run or extend.
-6. **Durable docs** — `docs/agent-browser/` files in the app repo, when present.
+5. **Scenarios** — the plan/recipe library (`docs/agent-browser/scenarios/`, index first)
+   under its own section, available to run or extend.
+6. **Durable docs** — the rest of `docs/agent-browser/` (app notes, assessment reports);
+   scenarios are excluded, they have their own section.
 7. **Recent runs** — the recent-window trace.
 
 Durable human-facing docs (flow recipes, assessment reports, app notes) live in the app
@@ -137,7 +140,6 @@ The suite's continuation depends on records that stay true:
 │   ├── index.json             # machine index (script-read/written; records only)
 │   ├── index.md               # orient doc, rendered from index.json
 │   ├── expectations/*.md      # reusable ground truth (web-checker / web-fixer)
-│   └── flows/*.md             # repeatable flow recipes (prose intent)
 └── .agent-browser/runs/       # gitignored — bulky evidence
     └── <app>/<slug>/
         ├── run.json           # single source of truth for the run
@@ -145,6 +147,16 @@ The suite's continuation depends on records that stay true:
         ├── shots/             # branch evidence: screenshots
         ├── traces/            # diagnostics: har, vitals
         └── report.md          # human report, rendered from run.json
+
+Evidence is per-flow, one working set — the latest run's; a superseded run's verdicts live
+in its index record, and git is the archive (run dirs are gitignored by design).
+
+docs/agent-browser/             # committed — durable knowledge (git-tracked)
+├── app-notes.md                # how to run, decisions (web-setup)
+└── scenarios/                  # the scenario library (web-logic / web-smoke)
+    ├── README.md               # navigation index (id → what, priority, depends)
+    ├── smoke/ · setup/ · business/ · flows/
+    └── <category>/<id>.md      # one scenario per file, frontmatter-led
 ```
 
 Add `.agent-browser/runs/` to the app repo's `.gitignore` once at setup.
@@ -155,9 +167,38 @@ from them instead of re-asking; web-fixer converges to them; a new one is writte
 check recurs and none exists. They are the shared reference for recurring checks — the
 counterpart of `flows/` (sequences) for states.
 
-**Flows** (`flows/*.md`) are repeatable verification recipes with per-step pass conditions —
-the unit a run executes; written by web-smoke (defined flows), web-logic (its derived
-logic plan, written before execution), and any skill that records a reusable case.
+**Scenarios** (`docs/agent-browser/scenarios/`) are the durable plans and recipes the suite
+executes — the unit a run verifies. One markdown artifact, organized by category and
+composed by reference (see *Scenarios*); written by web-logic (derived logic plans, before
+execution), web-smoke (defined flows), and any skill that records a reusable case.
+
+## Scenarios
+
+`docs/agent-browser/scenarios/` is the durable plan home. Durable knowledge lives in
+`docs/agent-browser/` (git-tracked) while `.agent-browser/` holds state — plans no longer
+live with the state. Each scenario is one markdown document with frontmatter; the suite
+never duplicates one meaning across two scenarios.
+
+Layout (the category is the navigation axis):
+
+| Directory | What lives there | Written by | Verdict |
+|---|---|---|---|
+| `smoke/` | pages load, no white screen / error overlay | web-smoke | pass/fail per page |
+| `setup/` | preconditions & fixtures (connect, seed data) — no standalone verdict | web-logic | — |
+| `business/` | one domain's logic: plan entries + test cases | web-logic | per case |
+| `flows/` | user journeys: thin compositions of the above | web-smoke | overall |
+
+`scenarios/README.md` is the navigation index (id → what, priority, depends); keep it in
+sync when adding a scenario. Frontmatter: `id` (unique kebab), `category`, `priority`
+(critical | high | medium | low), `depends` (scenario ids composed), `provenance` (source
+files the scenario rests on). Body: `Initial state` → `Steps` (action + expected) →
+`Success criteria` → `Cases` (business only).
+
+Composition is by reference, resolved by the agent at run time (`depends` /
+`<!-- include: setup/... -->`): a `flows/` scenario references business scenarios and
+never restates their rules; preconditions live in `setup/`. Provenance is the staleness
+hook: a changed provenance file makes every scenario resting on it stale — re-derive with
+web-logic before trusting its verdicts.
 
 ## Content doctrine
 
@@ -186,20 +227,24 @@ the scan and the retention tidy.
 
 ## Scripts
 
-Both scripts run from the app repo root; they operate on `.agent-browser/` and the app's git.
-They only compute and store — they never decide. They share one renderer
-(`scripts/agent_browser_common.py`) for the orient doc.
+Both scripts ship with the **web-verify** skill and are bootstrapped by web-setup into the
+app repo's `.agent-browser/scripts/` (the state home is self-contained: skills installs only
+carry SKILL.md per skill, so the machinery lives with the state). Invoke them from the app
+repo root as `.agent-browser/scripts/agent-browser-run …` (short form `agent-browser-run`
+in this document). They operate on `.agent-browser/` and the app's git; they only compute
+and store — they never decide. They share one renderer
+(`agent_browser_common.py`) for the orient doc.
 
 ### agent-browser-run — run lifecycle
 
 | Command | Effect |
 |---|---|
 | `agent-browser-run init` | scaffold `.agent-browser/` (empty records + orient doc) and append `.agent-browser/runs/` to `.gitignore` — idempotent |
-| `agent-browser-run start <app> <flow> [--skill <name>] [--ticket <ref>] [--blocked-by <ref,…>]` | create run dir, capture branch/commit, supersede previous complete run, register in index |
+| `agent-browser-run start <app> <flow> [--skill <name>] [--ticket <ref>] [--blocked-by <ref,…>] [--provenance <files,…>]` | create run dir, capture branch/commit, supersede previous complete run, register in index |
 | `agent-browser-run checkpoint <app> <flow> --json '<{step, method, expected, actual, verdict, evidence}>'` | append a verdict (write-as-you-go), re-render index.md |
 | `agent-browser-run assess <app> <scope> --json '<{completeness, logic, flow, ui, gist}>'` | record a structured assessment (scope = feature or `app`), re-render index.md |
 | `agent-browser-run finish <app> <flow> --status <complete\|failed\|aborted>` | set terminal state, render report.md + index.md |
-| `agent-browser-run ls [app]` / `show <slug>` | list runs / show one run's JSON |
+| `agent-browser-run ls [app]` / `show <flow>` | list runs / show one flow's latest run JSON |
 | `agent-browser-run prune --evidence <days> --keep <K>` | explicit evidence cleanup (index untouched) |
 
 Verdicts are per-checkpoint: `pass` / `fail` / `unsure`. Overall verdict at finish:

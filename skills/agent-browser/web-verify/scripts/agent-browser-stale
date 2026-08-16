@@ -116,10 +116,11 @@ def cmd_scan(args):
             results.append(stale)
         if args.mark:
             r["stale"] = stale  # record the computed fact; forgetting stays with tidy
-    print(json.dumps({"stale": results, "count": len(results)}, ensure_ascii=False, indent=2))
+    out = {"stale": results, "count": len(results)}
     if args.mark:
         save_index(index)
-        print(json.dumps({"marked": "stale facts recorded; orient doc re-rendered"}, ensure_ascii=False))
+        out["marked"] = "stale facts recorded; orient doc re-rendered"
+    print(json.dumps(out, ensure_ascii=False, indent=2))
 
 
 def cmd_tidy(args):

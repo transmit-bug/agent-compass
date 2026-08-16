@@ -19,10 +19,10 @@ Run the **web-verify** discipline for the run model, perception, and verdicts.
 
 ## Steps
 
-1. **Orient.** Read the app's `.agent-browser/index.md` and `../scripts/agent-browser-run ls`: what
+1. **Orient.** Read the app's `.agent-browser/index.md` and `.agent-browser/scripts/agent-browser-run ls`: what
    exists, what was last verified and when; have a dev server the agent can start and reload.
    *Done when: you know the current page structure and the last verification state.*
-2. **Start the run.** `../scripts/agent-browser-run start <app> <feature> --skill web-dev`; open the
+2. **Start the run.** `.agent-browser/scripts/agent-browser-run start <app> <feature> --skill web-dev`; open the
    dev URL.
    *Done when: the app is reachable and a baseline checkpoint is recorded.*
 3. **Implement against acceptance points.** Edit code, then verify per point: reload →
@@ -31,7 +31,7 @@ Run the **web-verify** discipline for the run model, perception, and verdicts.
 4. **Review visual changes.** When the work is appearance-visible: screenshot and confirm
    with the user — human confirmation is the threshold.
    *Done when: visual changes are confirmed or explicitly deferred.*
-5. **Finish with the report.** `../scripts/agent-browser-run finish <app> <feature> --status
+5. **Finish with the report.** `.agent-browser/scripts/agent-browser-run finish <app> <feature> --status
    complete|failed|aborted`.
    *Done when: the report names acceptance points, verdicts, files changed, evidence.*
 

@@ -30,9 +30,12 @@ _Avoid_: workflow, action
 The lifecycle unit of a managed web app — a user-facing capability with a slug.
 _Avoid_: ticket, task, story
 
-**Flow**:
-A repeatable verification recipe under a feature (`.agent-browser/flows/*.md`), the unit a run executes.
-_Avoid_: scenario
+**Scenario**:
+A durable plan or recipe in `docs/agent-browser/scenarios/` (categories: smoke / setup /
+business / flows) — the unit a run executes. Frontmatter-led (id / category / priority /
+depends / provenance), composed by reference, never duplicated.
+_Avoid_: plan doc, recipe, flow (as an artifact — "flow" survives only as the run's slug
+axis and the flows/ category: a thin composed journey)
 
 **Run**:
 One traceable verification execution of a flow, anchored to worktree/branch/commit, carrying per-checkpoint verdicts.

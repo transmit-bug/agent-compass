@@ -53,8 +53,11 @@ parts where useful. The blueprint's glossary is the canonical vocabulary.
      operation-layer stub) and `content-manager/agentsmd` ship model-invoked by design;
      their value is automatic reach, so the zero-context rule is waived there
    - Steps have checkable completion criteria; guardrails are stated positively
-   - Shared mechanics go in category-level `scripts/`, shared contracts in category-level
-     `references/`; skills point to them via relative paths, zero duplication
+   - Shared mechanics and contracts ship **inside the skill that owns them**
+     (`<skill>/scripts/`, `<skill>/references/`) — the install surface is per-skill
+     (`npx skills add` copies each skill's own folder, category-level files never
+     reach the consumer), so machinery must travel with its owner; zero duplication:
+     one copy, one owner (precedent: `computer-automation`, `web-verify`)
    - Intent (how to do it, what "good" looks like) goes in Markdown; records (what was
      done, results) go in JSON; deterministic computation goes into scripts, judgment
      stays with the agent

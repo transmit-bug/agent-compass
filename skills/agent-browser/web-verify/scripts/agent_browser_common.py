@@ -88,7 +88,9 @@ def derive_status(record):
     """Derive the per-flow status from the latest record (ADR-0002)."""
     if record.get("blockers"):
         return "blocked"
-    if record.get("status") in ("running", "aborted", "failed"):
+    if record.get("status") == "failed":
+        return "failing"  # run terminated as failed — known-broken, not "resume me"
+    if record.get("status") in ("running", "aborted"):
         return "in-progress"
     verdict = record.get("verdict")
     if verdict == "fail":
@@ -134,7 +136,7 @@ def next_actions(runs, assessments):
         elif st == "stale":
             actions.append(f"re-verify {flow} before trusting it (via {r.get('skill','-')})")
         elif st == "failing":
-            actions.append(f"check/fix {flow} (verdict fail)")
+            actions.append(f"check/fix {flow} (last run failed)")
     for key, a in sorted(latest_assessments(assessments).items()):
         concerns = assessment_concerns(a)
         if concerns:
@@ -151,18 +153,32 @@ def expectations_list():
     return []
 
 
-def flows_list():
-    d = os.path.join(BASE, "flows")
-    if os.path.isdir(d):
-        return sorted(f for f in os.listdir(d) if f.endswith(".md"))
-    return []
+def scenarios_list():
+    d = os.path.join("docs", "agent-browser", "scenarios")
+    if not os.path.isdir(d):
+        return []
+    out = []
+    for base, _dirs, files in os.walk(d):
+        for f in sorted(files):
+            if f.endswith(".md"):
+                out.append(os.path.relpath(os.path.join(base, f), d))
+    return sorted(out)
 
 
 def durable_docs():
+    """docs/agent-browser/ files outside the scenario library (it has its own section)."""
     d = os.path.join("docs", "agent-browser")
-    if os.path.isdir(d):
-        return sorted(f for f in os.listdir(d) if f.endswith(".md"))
-    return []
+    if not os.path.isdir(d):
+        return []
+    out = []
+    for base, _dirs, files in os.walk(d):
+        for f in sorted(files):
+            if f.endswith(".md"):
+                p = os.path.relpath(os.path.join(base, f), "docs")
+                if p.startswith("agent-browser/scenarios/"):
+                    continue
+                out.append(p)
+    return sorted(out)
 
 
 def truncate(s, n=120):
@@ -227,18 +243,18 @@ def render_orient(index):
             lines.append(f"- {e}")
         lines.append("")
 
-    flows = flows_list()
-    if flows:
-        lines.append("## Flows (verification plans)")
-        for f in flows:
-            lines.append(f"- {f}")
+    scens = scenarios_list()
+    if scens:
+        lines.append("## Scenarios (the plan/recipe library)")
+        for s in scens:
+            lines.append(f"- {s}")
         lines.append("")
 
     docs = durable_docs()
     if docs:
         lines.append("## Durable docs")
         for d in docs:
-            lines.append(f"- [docs/agent-browser/{d}](docs/agent-browser/{d})")
+            lines.append(f"- [docs/{d}](docs/{d})")
         lines.append("")
 
     if not runs and not assessments:
