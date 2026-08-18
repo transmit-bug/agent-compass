@@ -46,7 +46,7 @@ Run `<skill-dir>/scripts/mid.sh <cmd>` from the project cwd (artifacts land in `
 | Start daemon | `scripts/mid.sh agent start` | connect once, health-checked (~0.4s vs ~6s per CLI call) |
 | Open session | `scripts/mid.sh start <slug>` | creates `.midscene/<slug>/` (auto `-2/-3` on name clash) |
 | Look | `scripts/mid.sh shot <purpose>` | screenshot archived; identical frames **SKIPPED** (diff gate) |
-| Act | `scripts/mid.sh act "<whole task>"` | click/type/drag/scroll/keys — one high-level prompt |
+| Act | `scripts/mid.sh act "<whole flow>"` | one high-level prompt carrying a whole flow |
 | Verify | `scripts/mid.sh assert "<condition>"` | natural-language screen check, no UI action |
 | Finish | `scripts/mid.sh finish` | merge reports → `index.md` → cleanup, keep last 20 |
 | Stop daemon | `scripts/mid.sh agent stop` | release the connection |
@@ -64,45 +64,52 @@ model-invoked primitive).
 ## Why the session — the cost gate
 
 Most consecutive frames are identical (measured 80–100%). The daemon compares each new frame
-to the last locally before the model ever runs: unchanged screen → skip the AI; same screen
-(perceptual hash) **and** the same `act`/`assert` prompt → the cached result — from a
-**persistent cache** (`.midscene/.cache.json`), so repeats hit across sessions too. **Zero
-LLM on no-ops and repeats.** `mid.sh cache stats` inspects it; `mid.sh cache clear` resets
-(after a model or app update, or when results smell stale). The session is done when
-`finish` has archived the report.
+to the last locally before the model ever runs: unchanged screen → skip the AI; a repeated
+`act` on a bit-identical screen reuses the last result (retry gate); a **verified assertion**
+on a same screen (perceptual hash) with the **exact same prompt** returns the cached verdict
+from `.midscene/.cache.json` — across sessions. **Zero LLM on no-ops and re-assertions.**
+`mid.sh cache stats` inspects the cache; `mid.sh cache clear` resets it (after a model or app
+update, or when verdicts smell stale). The session is done when `finish` has archived the
+report.
 
 ## Rules
 
 1. **One command at a time, synchronous.** Never background, never chain — each output
    (especially the screenshot) feeds the next decision. Commands take ~1 min (AI inference);
    that is not a hang.
-2. **Merge to the milestone.** One `act` per verifiable milestone — all operations of a phase
-   in a single prompt ("open the Export dialog, choose PDF, save it to the Desktop"), then
-   `assert` the milestone before the next `act`. A whole long task in one `act` cannot be
-   corrected mid-course; a milestone can.
-3. **Assert, don't look.** Prefer `assert` — the model reads the screen and returns a
-   verdict. Every `shot` you read yourself is a second model pass over the same pixels.
-   Reserve `shot` for: first encounter of a screen (map entry), debugging a failure, evidence
-   the user must see.
-4. **Reuse prompts verbatim.** When the screen map holds a proven prompt for the step, run it
-   word-for-word: exact prompt + same screen is a persistent-cache hit (zero LLM). Rewording
-   is a cache miss and a fresh experiment.
-5. **Foreground the app first.** `open -a <App>` (macOS) / `start <App>` (Windows), screenshot
-   to confirm it is visible, then automate. Avoid launcher-search flows through midscene.
-6. **Be specific about elements**: color, position, surrounding text ("the yellow minimize
+2. **One `act` per coherent flow.** Midscene plans-executes-replans *inside* a single `act`
+   with shared context; between calls it shares nothing. Give `act` the whole flow — every
+   operation with its intended effect ("open the Export dialog, choose CSV, name the file
+   ledger-2026, click Save") — and verify with `assert`, not by splitting the flow. State the
+   irreversible steps so the act-vs-ask gate can fire before anything runs.
+3. **Optimistic flow, lazy verification.** After a flow `act`, assert the **terminal state**
+   only. On failure, bisect: `assert` the intermediate checkpoints to locate the last-good
+   state, re-plan the remainder, `act` from there. Per-step asserts are the smoke skill's
+   contract, not the default.
+4. **Verdict-driven, image-free.** Orchestrating means plan → `act` → `assert` → repeat;
+   every screen question goes through `assert` (cacheable, structured verdict). Reading a
+   screenshot yourself bloats your window for the rest of the session and never caches.
+   `shot` is a last-resort diagnostic — an element `act` cannot find, evidence for the user —
+   and the screen-map builder (first encounter).
+5. **Reuse prompts verbatim.** When the screen map holds a proven prompt for the step, run it
+   word-for-word: exact assert prompt + same screen is a persistent-cache hit (zero LLM).
+   Rewording is a cache miss and a fresh experiment.
+6. **Foreground the app first.** `open -a <App>` (macOS) / `start <App>` (Windows), then
+   `assert` it is visible. Avoid launcher-search flows through midscene.
+7. **Be specific about elements**: color, position, surrounding text ("the yellow minimize
    button in the top-left corner of the Safari window").
-7. **Minimize, don't close.** Never close an app or window unless the user explicitly asks.
-8. **On failure, re-screenshot and re-describe** the element; check it is not behind another
-   window — don't continue blindly.
-9. **RDP (remote Windows host)**: `npx -y @midscene/computer@1 connect --host <fqdn> --username <user> --password "$RDP_PASSWORD"`, and repeat those flags on every command (each CLI invocation reconnects). Full RDP reference: [references/command-reference.md](references/command-reference.md) → **Connect via RDP**.
-10. **Report before finishing**: outcome, key data, paths of generated files. Never end silently.
+8. **Minimize, don't close.** Never close an app or window unless the user explicitly asks.
+9. **On failure, one diagnostic `shot`** — re-read and re-describe the element; check it is
+   not behind another window — don't continue blindly.
+10. **RDP (remote Windows host)**: `npx -y @midscene/computer@1 connect --host <fqdn> --username <user> --password "$RDP_PASSWORD"`, and repeat those flags on every command (each CLI invocation reconnects). Full RDP reference: [references/command-reference.md](references/command-reference.md) → **Connect via RDP**.
+11. **Report before finishing**: outcome, key data, paths of generated files. Never end silently.
 
 ## Long tasks
 
 Midscene decomposes inside a single `act` but shares nothing between calls — **you are the
-memory across calls**. Plan the route on the screen map first, then per screen: `assert` the
-anchor → one merged `act` for that screen's operations → `assert` the milestone → update the
-map entry.
+memory across calls, not the eyes**. Plan the route on the screen map; per leg: `act` the
+whole leg → `assert` the terminal anchor → on failure bisect with checkpoint asserts →
+resume from the last-good anchor. Update the map at `finish`.
 
 ## Advanced options
 
@@ -115,8 +122,7 @@ troubleshooting: see [references/command-reference.md](references/command-refere
 ```bash
 scripts/mid.sh agent start
 scripts/mid.sh start demo
-scripts/mid.sh shot initial
-scripts/mid.sh act "type hello world in the search field and press Enter"
+scripts/mid.sh act "in Safari, type hello world in the search field and press Enter"
 scripts/mid.sh assert "a result list is visible"
 scripts/mid.sh finish
 scripts/mid.sh agent stop

@@ -14,6 +14,7 @@
       "skills": [
         "./skills/desktop-automation/computer-automation",
         "./skills/desktop-automation/screen-verify",
+        "./skills/desktop-automation/screen-setup",
         "./skills/desktop-automation/screen-checker",
         "./skills/desktop-automation/screen-fixer",
         "./skills/desktop-automation/screen-smoke"

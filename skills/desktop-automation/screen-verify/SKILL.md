@@ -13,7 +13,7 @@ group; the `screen-*` business skills invoke it by prose — "run the screen-ver
 discipline" — and inherit what follows. The screen-map contract
 ([references/screen-map.md](references/screen-map.md)) is owned here; the machinery —
 `mid.sh`, the daemon, the persistent cache — is the **computer-automation** operation
-layer's, and its session-loop rules (synchronous commands, milestone `act`s,
+layer's, and its session-loop rules (synchronous commands, whole-flow `act`s,
 assert-don't-look, verbatim prompts) apply unchanged.
 
 ## The discipline
@@ -22,8 +22,9 @@ assert-don't-look, verbatim prompts) apply unchanged.
   state. Judge it once, record exactly one verdict, and attach the evidence — screenshot
   paths, assertion output, RMSE values. An interrupted run keeps its recorded verdicts.
 - **The screen map first.** Before planning acts, read `.midscene/screens.md` if it
-  exists — proven routes and verbatim prompts (→ persistent-cache hits). At `finish`,
-  merge what the session learned back. Contract: references/screen-map.md.
+  exists — launch commands, proven routes, verbatim prompts (→ persistent-cache hits on
+  anchors). At `finish`, merge what the session learned back. Contract:
+  references/screen-map.md.
 - **The report closes the run.** Verdict → actions taken → evidence paths → next step.
   Never end silently.
 

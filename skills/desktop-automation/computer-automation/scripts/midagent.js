@@ -5,11 +5,13 @@
  * Session state lives in this process, implementing "local compare, LLM on demand":
  *   - Connect once, health-check once (the CLI repeats both on every call)
  *   - Local screenshot diff (screen-diff.py --strict): screen unchanged → zero LLM
- *   - Persistent result cache (screen-diff.py --hash + .midscene/.cache.json):
- *     same screen (dHash hamming ≤ MIDAGENT_CACHE_DIST) + exact same prompt → the
- *     cached act/assert result, across sessions. This is the desktop analog of
- *     midscene's task cache — it assumes a visually identical screen resolves a
- *     verbatim prompt identically; clear with mid.sh cache clear after model/app changes.
+ *   - Persistent result cache (screen-diff.py --hash + .midscene/.cache.json) for
+ *     ASSERTIONS ONLY: same screen (dHash hamming ≤ MIDAGENT_CACHE_DIST) + exact same
+ *     prompt → the cached verdict, across sessions. Asserts are pure functions of the
+ *     screen, so this is safe. ACTS are imperative — a cached act result would mean
+ *     skipping the action itself — so acts only reuse the last result in-process when
+ *     the screen is bit-identical and the prompt repeats immediately (retry/idempotence
+ *     gate); they never persist. Clear with mid.sh cache clear after model/app changes.
  *
  * Start: node midagent.js serve        (pair with mid.sh agent start)
  * Port: 127.0.0.1:39417 (override with MIDAGENT_PORT)
@@ -46,7 +48,8 @@ if (fs.existsSync(path.join(ROOT, ".env"))) {
 let agent = null;
 let startedAt = null;
 let lastFrame = null; // most recently captured frame path (gate baseline)
-let pcache = []; // [{ h: dHashHex, kind: "act"|"assert", prompt, result, ts }]
+let lastAct = null; // { prompt, result } — in-process act retry gate (never persisted)
+let pcache = []; // [{ h: dHashHex, kind: "assert", prompt, result, ts }] — assertions only
 
 // ---------- local diff (strict mode: any >=0.05% change is a real state change) ----------
 function diffStrict(a, b) {
@@ -105,26 +108,26 @@ function pcachePersist() {
   } catch {}
 }
 
-function pcacheLookup(kind, prompt, h) {
+function pcacheLookup(prompt, h) {
   if (!h || CACHE_MAX <= 0) return null;
   let best = null;
   for (const e of pcache) {
-    if (e.kind !== kind || e.prompt !== prompt) continue;
+    if (e.prompt !== prompt) continue;
     const d = hammingHex(e.h, h);
     if (d <= CACHE_DIST && (!best || d < best.d)) best = { ...e, d };
   }
   return best;
 }
 
-function pcacheStore(kind, prompt, h, result) {
+function pcacheStore(prompt, h, result) {
   if (!h || CACHE_MAX <= 0) return;
-  // The cache key is (kind, prompt, screen): evict only same-prompt entries on a
+  // The cache key is (kind=assert, prompt, screen): evict only same-prompt entries on a
   // perceptually same screen (within CACHE_DIST) — the same prompt on a different
-  // screen is a distinct result and must survive.
+  // screen is a distinct verdict and must survive.
   pcache = pcache.filter(
-    (e) => !(e.kind === kind && e.prompt === prompt && hammingHex(e.h, h) <= CACHE_DIST)
+    (e) => !(e.prompt === prompt && hammingHex(e.h, h) <= CACHE_DIST)
   );
-  pcache.push({ h, kind, prompt, result, ts: new Date().toISOString() });
+  pcache.push({ h, kind: "assert", prompt, result, ts: new Date().toISOString() });
   while (pcache.length > CACHE_MAX) pcache.shift();
   pcachePersist();
 }
@@ -238,26 +241,29 @@ async function handle(req, res) {
     return json(res, 200, { ok: true, saved, path: pathOut, msg });
   }
 
-  // POST /act { prompt } —— gate: same screen (dHash) + exact same prompt → cached, zero LLM
+  // POST /act { prompt } —— in-process retry gate only: bit-identical screen + the
+  // exact same prompt re-sent immediately → reuse the last result (retry/idempotence);
+  // never persisted — an act's value is the state change it performs, so a cached act
+  // result is a skipped action, not a saving.
   if (url === "/act") {
     const prompt = String(body.prompt || "");
     if (!prompt) return json(res, 400, { error: "prompt required" });
     const cap = await captureTo(dir, ".last.png");
-    const h = dhashHex(cap);
-    const hit = pcacheLookup("act", prompt, h);
-    if (hit) {
+    const unchanged =
+      lastFrame && fs.existsSync(lastFrame) && screenSame(lastFrame, cap);
+    if (unchanged && lastAct && lastAct.prompt === prompt) {
       lastFrame = cap;
       return json(res, 200, {
         ok: true,
         cached: true,
         llm: false,
-        result: hit.result,
-        msg: `CACHED screen matches (hamming ${hit.d}/${CACHE_DIST}) + same prompt, reused result (zero LLM)`,
+        result: lastAct.result,
+        msg: "CACHED screen unchanged + same act prompt re-sent, reused last result (retry gate)",
       });
     }
     const result = await agent.aiAct(prompt);
     lastFrame = cap;
-    pcacheStore("act", prompt, h, result);
+    lastAct = { prompt, result };
     return json(res, 200, { ok: true, cached: false, llm: true, result, msg: "act done" });
   }
 
@@ -267,7 +273,7 @@ async function handle(req, res) {
     if (!prompt) return json(res, 400, { error: "prompt required" });
     const cap = await captureTo(dir, ".last.png");
     const h = dhashHex(cap);
-    const hit = pcacheLookup("assert", prompt, h);
+    const hit = pcacheLookup(prompt, h);
     if (hit) {
       lastFrame = cap;
       return json(res, 200, {
@@ -285,7 +291,7 @@ async function handle(req, res) {
       message: r?.message ?? null,
     };
     lastFrame = cap;
-    pcacheStore("assert", prompt, h, result);
+    pcacheStore(prompt, h, result);
     return json(res, 200, { ok: true, cached: false, llm: true, ...result, msg: result.pass ? "Assertion passed." : "Assertion failed." });
   }
 

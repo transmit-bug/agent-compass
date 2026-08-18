@@ -63,7 +63,7 @@ Or install specific skills:
 
 ```bash
 npx skills add transmit-bug/agent-compass --skill agentsmd
-npx skills add transmit-bug/agent-compass --skill computer-automation --skill screen-verify --skill screen-checker --skill screen-fixer --skill screen-smoke
+npx skills add transmit-bug/agent-compass --skill computer-automation --skill screen-verify --skill screen-setup --skill screen-checker --skill screen-fixer --skill screen-smoke
 ```
 
 ## Categories
@@ -84,7 +84,7 @@ Vision-driven desktop control (Midscene) instantiating the category blueprint �
 
 - **Operation layer** — `computer-automation`: a persistent **session** daemon that connects once, gates every AI call behind a local screen-diff (zero LLM on unchanged frames), caches (screen, prompt) results persistently, and archives every run (`index.md` + merged report). This is the midscene wrapper — the cost and speed optimization.
 - **Primitive** — `screen-verify` (model-invoked): the verification discipline — checkpoint verdicts with evidence, the screen map (`.midscene/screens.md`, built by traversal), act-vs-ask.
-- **Business layer** — `screen-checker`, `screen-fixer`, `screen-smoke`: user-invoked workflows, each opening with "run the screen-verify discipline … invoke computer-automation by name alongside this one" and depending one-way on the layers below.
+- **Business layer** — `screen-setup` (one-time onboarding: dependencies, macOS permissions, model config, the `.gitignore` split — runtime ignored, the committed screen map kept — and the map skeleton with app launch facts), `screen-checker`, `screen-fixer`, `screen-smoke`: user-invoked workflows; the verification skills open with "run the screen-verify discipline … invoke computer-automation by name alongside this one" and depend one-way on the layers below.
 
 ```
 Business (user-invoked)      Primitive (model-invoked)   Operation (user-invoked)

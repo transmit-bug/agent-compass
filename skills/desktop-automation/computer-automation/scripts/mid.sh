@@ -5,7 +5,7 @@
 #   mid.sh start <slug>      start a session (auto -2/-3 on name clash)
 #   mid.sh shot <purpose>    take a screenshot and archive it as screenshots/NNN-purpose.png
 #   mid.sh finish            collect reports → markdown → index.md → cleanup → keep last 20 sessions
-#   mid.sh cache clear|stats persistent act/assert result cache (screen hash + exact prompt)
+#   mid.sh cache clear|stats persistent assert cache (screen hash + exact prompt)
 #   mid.sh ls                list sessions by time
 #   mid.sh clean [N]         manual cleanup (default keeps 20)
 set -u

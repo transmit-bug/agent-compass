@@ -135,13 +135,19 @@
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/desktop-automation/screen-verify/SKILL.md",
-      "computedHash": "6c601aca9ec819b135f9d519a5ee2e6e8bb9dca2d31b0c5234a35ab9c15d36ff"
+      "computedHash": "3e829d6114c3122c434ea2c2134e450f77a031598acdef9584590e98862eb490"
     },
     "computer-automation": {
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/desktop-automation/computer-automation/SKILL.md",
-      "computedHash": "b877ba621d5498d81adca22db4c359a98646a2d4536ab4bc98db89530c032836"
+      "computedHash": "f0101d63f14b5ec376e91e2b7d13eacc4e87703714d6c834efb053588b7f9100"
+    },
+    "screen-setup": {
+      "source": "transmit-bug/agent-compass",
+      "sourceType": "github",
+      "skillPath": "skills/desktop-automation/screen-setup/SKILL.md",
+      "computedHash": "3feb47aecad54bcb36f470caba6a34dd939e20f5b7a27f9a4a50fa50083f4b4c"
     }
   }
 }
