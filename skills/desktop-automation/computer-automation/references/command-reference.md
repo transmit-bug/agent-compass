@@ -115,6 +115,9 @@ npx -y @midscene/computer@1 assert --displayId 1 --prompt "the file picker is op
     --message "the export should finish after clicking Save"
   ```
 
+Through the daemon (`mid.sh assert`), the same call prints a `VERDICT: PASS/FAIL/UNRELIABLE`
+last line and exits 0/1/3 — branch on the exit code; pass `--json` for the raw response.
+
 - `--image <url|path>` + `--image-name <name>` — compare against a reference image (http(s),
   `data:` URI, or local path). Repeat in matching order for multiple references; add
   `--convertHttpImage2Base64 true` when the model cannot reach the URL directly
@@ -252,6 +255,11 @@ npx -y @midscene/computer@1 act --deep-locate --deep-think --prompt "open Prefer
 - **macOS: black screenshot** — the Mac is **locked** (login/lock window); macOS prohibits
   capture while locked. Use a screensaver (with "require password after" set to a long
   delay) instead of locking during automation.
+- **Linux/X11: blank/black or failing capture** — wrong or unreachable `DISPLAY`. The
+  daemon inherits `DISPLAY` at start; verify it before `mid.sh agent start` and restart the
+  daemon after any display change. In WSL, the Windows-host X server's address can rotate
+  per boot (rediscover via `ip route show default` + probing ports 6000/6001); prefer an X
+  server with access control off for remote/LAN display numbers.
 - **macOS: `system_profiler: command not found`** — PATH incomplete; run the PATH export above.
 - **AI cannot find the element** — screenshot to confirm it is visible; describe with color,
   position, surrounding text; check it is not behind another window.

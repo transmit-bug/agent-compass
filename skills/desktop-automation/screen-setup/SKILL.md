@@ -34,20 +34,30 @@ daemon.
    *Done when: every required dependency answers its version command, or the user has
    explicitly declined one and the consequence is recorded.*
 
-2. **Check macOS permissions** (macOS only; the #1 first-run failure). Accessibility and
-   screen-recording permission for the terminal that will run the daemon: attempt a
-   screenshot via the daemon (`mid.sh agent start` then `mid.sh shot setup-check` — a black
-   or failing capture means locked screen or missing permission). If the check fails, guide
-   the user through System Settings → Privacy & Security and have them restart the terminal;
-   re-run until the capture succeeds, then `mid.sh agent stop`.
+2. **Check capture permissions** (the #1 first-run failure). macOS: accessibility and
+   screen-recording permission for the terminal that will run the daemon. Linux/X11: a
+   reachable `DISPLAY` — the daemon inherits it at start, so confirm it before starting
+   (and restart the daemon after display changes). Attempt a real capture via the daemon
+   (`mid.sh agent start` then `mid.sh shot setup-check` — a black, blank, or failing
+   capture means locked screen, missing permission, or wrong display). If the check
+   fails, fix the cause (System Settings → Privacy & Security on macOS; correct `DISPLAY`
+   on Linux), have the user restart the terminal where relevant, re-run until the capture
+   succeeds, then `mid.sh agent stop`.
    *Done when: a screenshot is captured successfully on this machine.*
 
 3. **Check model config.** `.env` in the project cwd must contain `MIDSCENE_MODEL_API_KEY`
    (plus `MIDSCENE_MODEL_NAME` / `BASE_URL` / `FAMILY` as the provider requires). If absent,
    show the key list, ask the user to fill `.env` themselves (the key never enters the
    transcript), and confirm the daemon loads it (`mid.sh agent start` → a trivial
-   `mid.sh assert "the screen shows a desktop"` → `mid.sh agent stop`).
-   *Done when: one assertion round-trips through the configured model.*
+   `mid.sh assert "the screen shows a desktop"` → `mid.sh agent stop`). Then verify verdict
+   integrity: assert a statement whose truth you control locally (paint the root window a
+   solid color, open a known dialog) — the verdict must agree with it. If a true statement
+   comes back `VERDICT: UNRELIABLE` or FAIL with an empty thought, the SDK cannot parse this
+   model's answers: record the model+SDK combo as a known-issue hint in the map's Hints
+   section and report it — every later verdict routes through this oracle, so stop here
+   rather than bless a broken pipeline.
+   *Done when: one assertion round-trips through the configured model and agrees with the
+   locally known truth.*
 
 4. **Write the .gitignore split.** The screen map is committed; session archives, the
    daemon's cache, and logs are not. Directories cannot be re-included once ignored, so the

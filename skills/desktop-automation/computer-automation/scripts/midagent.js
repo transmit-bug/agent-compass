@@ -176,19 +176,25 @@ async function captureTo(dir, name) {
 // every act/assert/shot capture — acting on or judging a half-drawn transition is how
 // optimistic flows produce phantom failures. A screen that never settles (video,
 // animation) falls through after SETTLE_PROBES with the latest frame.
+// Returns { cap, prev }: cap is the settled frame (.last.png); prev is the baseline
+// frame from BEFORE this capture (.prev.png, or null on the first capture). Callers
+// must diff against prev, not against a remembered .last.png path — .last.png is
+// overwritten in place, so a remembered path would compare the file with itself.
 async function settledCapture(dir) {
+  const last = path.join(dir, ".last.png");
+  const prevPath = path.join(dir, ".prev.png");
+  if (fs.existsSync(last)) fs.copyFileSync(last, prevPath); // preserve the prior baseline
   const names = [".settle-0.png", ".settle-1.png"];
-  let prev = await captureTo(dir, names[0]);
-  let cur = prev;
+  let p0 = await captureTo(dir, names[0]);
+  let cur = p0;
   for (let i = 0; i < SETTLE_PROBES; i++) {
     await sleep(SETTLE_MS);
     cur = await captureTo(dir, names[(i + 1) % 2]);
-    if (screenSame(prev, cur)) break;
-    prev = cur;
+    if (screenSame(p0, cur)) break;
+    p0 = cur;
   }
-  const last = path.join(dir, ".last.png");
   fs.copyFileSync(cur, last);
-  return last;
+  return { cap: last, prev: fs.existsSync(prevPath) ? prevPath : null };
 }
 
 // ---------- HTTP ----------
@@ -280,15 +286,16 @@ async function handle(req, res) {
   if (!dir) return json(res, 400, { error: "no active session (run mid.sh start first)" });
   if (!agent) return json(res, 503, { error: "daemon not connected" });
 
-  // POST /shot { purpose } —— record only changed frames
+  // POST /shot { purpose } —— record only changed frames (diff against the PREVIOUS
+  // baseline, preserved by settledCapture in .prev.png)
   if (url === "/shot") {
     const purpose = String(body.purpose || "step").replace(/[^A-Za-z0-9._-]/g, "-");
-    const cap = await settledCapture(dir);
+    const { cap, prev } = await settledCapture(dir);
     let saved = false;
     let pathOut = null;
     let msg;
-    if (lastFrame && fs.existsSync(lastFrame) && screenSame(lastFrame, cap)) {
-      msg = `SKIP identical to ${path.basename(lastFrame)}, not re-archived`;
+    if (prev && screenSame(prev, cap)) {
+      msg = `SKIP identical to ${path.basename(prev)}, not re-archived`;
     } else {
       const shots = path.join(dir, "screenshots");
       fs.mkdirSync(shots, { recursive: true });
@@ -319,9 +326,10 @@ async function handle(req, res) {
   if (url === "/act") {
     const prompt = String(body.prompt || "");
     if (!prompt) return json(res, 400, { error: "prompt required" });
-    const cap = await settledCapture(dir);
-    const unchanged =
-      lastFrame && fs.existsSync(lastFrame) && screenSame(lastFrame, cap);
+    const { cap, prev } = await settledCapture(dir);
+    // "Unchanged" = identical to the PREVIOUS baseline (.prev.png), not to a remembered
+    // .last.png path — that file was just overwritten in place and would self-compare.
+    const unchanged = prev && fs.existsSync(prev) && screenSame(prev, cap);
     if (unchanged && lastAct && lastAct.ok && lastAct.prompt === prompt) {
       lastFrame = cap;
       return json(res, 200, {
@@ -356,7 +364,7 @@ async function handle(req, res) {
   if (url === "/assert") {
     const prompt = String(body.prompt || "");
     if (!prompt) return json(res, 400, { error: "prompt required" });
-    const cap = await settledCapture(dir);
+    const { cap } = await settledCapture(dir);
     const h = dhashHex(cap);
     const unkeyable = lowInfo(cap); // near-blank frame: dHash keys collide — bypass cache both ways
     const hit = pcacheLookup(prompt, h, unkeyable);
@@ -371,6 +379,20 @@ async function handle(req, res) {
       });
     }
     const r = await agent.aiAssert(prompt, body.message || undefined);
+    // Verdict integrity: with some model+SDK combos the model answers correctly but the
+    // SDK fails to parse the response — surfacing as a FAILED assert with empty thought
+    // AND empty message. Report UNRELIABLE instead of a fake FAIL; never cache it.
+    if (r?.pass === undefined && !r?.thought && !r?.message) {
+      lastFrame = cap;
+      return json(res, 200, {
+        ok: true,
+        cached: false,
+        llm: true,
+        unreliable: true,
+        pass: null,
+        msg: "UNRELIABLE verdict — the model answered but the SDK could not parse it (failed assert with empty thought+message). Cross-check midscene_run/log/ai-call.log or a reference image before recording anything; record the model+SDK combo in the screen map's hints.",
+      });
+    }
     const result = {
       pass: !!r?.pass,
       thought: r?.thought ?? null,

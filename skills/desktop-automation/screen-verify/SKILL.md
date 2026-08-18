@@ -44,7 +44,11 @@ Smoke runs phrase these per step: pass (match or drift) / fail (regression) / un
 A cached verdict repeats the model's earlier judgment; it does not re-derive it. When a
 cached PASS contradicts what you expect, ground it before trusting it — `assert --image`
 against a reference, or an RMSE compare — and refresh the wording with
-`mid.sh cache invalidate "<prompt>"` + a verbatim re-assert.
+`mid.sh cache invalidate "<prompt>"` + a verbatim re-assert. A fresh assert can also lie:
+some model+SDK combos answer correctly but fail to parse, which surfaces as
+`VERDICT: UNRELIABLE` (exit 3) — never record a verdict from an UNRELIABLE assert;
+cross-check `midscene_run/log/ai-call.log` or a reference image, and record the combo as a
+known-issue hint in the map so later sessions gate on it.
 
 ## Act-vs-ask
 

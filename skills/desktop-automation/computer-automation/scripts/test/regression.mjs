@@ -19,6 +19,13 @@
  *   7. Acts never persist: after a daemon restart the same act re-runs.
  *   8. Element-level act prompts get an advisory note; behavior is unchanged.
  *   9. .midscene/.cache.json holds only passing assertion entries.
+ *  10. Shot archiving has no false SKIP: changed screens always archive, identical
+ *      frames SKIP (field-found: the .last.png self-compare bug).
+ *  11. An UNRELIABLE assert (SDK cannot parse the model's answer) is reported as
+ *      unreliable, never as FAIL, and never cached (field-found: mimo-v2.5 + SDK
+ *      1.10.12 parse failure).
+ *  12. mid.sh assert prints the VERDICT protocol line and exits 0/1/3 — the caller
+ *      branches on the exit code instead of parsing prose or the SDK log.
  */
 import { spawn } from "node:child_process";
 import { execFileSync } from "node:child_process";
@@ -28,6 +35,7 @@ import path from "node:path";
 
 const SKILL_DIR = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const MIDAGENT = path.join(SKILL_DIR, "midagent.js");
+const MID = path.join(SKILL_DIR, "mid.sh");
 const PORT = 39000 + Math.floor(Math.random() * 900);
 const BASE = `http://127.0.0.1:${PORT}`;
 
@@ -103,6 +111,7 @@ async function aiAct(prompt) {
 async function aiAssert(prompt) {
   const n = bump("asserts");
   const ctl = readJson(CONTROL, {});
+  if (ctl.assertUnreliable) return {}; // SDK-parse-failure signature: pass/thought/message all empty
   const pass = !!ctl.assertPass;
   return { pass, thought: "stub thought #" + n, message: pass ? null : "stub failure msg #" + n };
 }
@@ -218,14 +227,22 @@ try {
   setControl({ screens: ["rich2.png"], actThrows: false, assertPass: true });
   r = await post("/act", { prompt: "open the Export dialog, choose CSV, name the file ledger-2026, click Save" });
   check("6b same act prompt after failure re-executes (gate stays open)", r.llm === true && getCounters().acts === 2);
+  // 6c — idempotent re-dispatch after success hits the gate
   r = await post("/act", { prompt: "open the Export dialog, choose CSV, name the file ledger-2026, click Save" });
   check("6c idempotent re-dispatch after success hits the gate", r.cached === true && getCounters().acts === 2);
+
+  // 6d — the gate's screen check is live: same prompt on a CHANGED screen re-executes
+  // (guards the .last.png self-compare bug that made `unchanged` vacuously true)
+  setControl({ screens: ["rich1.png"], actThrows: false, assertPass: true });
+  r = await post("/act", { prompt: "open the Export dialog, choose CSV, name the file ledger-2026, click Save" });
+  check("6d same act prompt on a changed screen re-executes", r.llm === true && getCounters().acts === 3, JSON.stringify(r));
 
   // 7 — acts never persist across restarts
   await stopDaemon();
   await startDaemon();
+  setControl({ screens: ["rich2.png"], actThrows: false, assertPass: true });
   r = await post("/act", { prompt: "open the Export dialog, choose CSV, name the file ledger-2026, click Save" });
-  check("7 act re-runs after daemon restart (acts are imperative)", r.llm === true && getCounters().acts === 3, JSON.stringify(r));
+  check("7 act re-runs after daemon restart (acts are imperative)", r.llm === true && getCounters().acts === 4, JSON.stringify(r));
 
   // 8 — element-level prompts get an advisory note, still execute
   r = await post("/act", { prompt: "click login" });
@@ -238,6 +255,45 @@ try {
     entries.length > 0 && entries.every((e) => e.kind === "assert" && e.result && e.result.pass === true),
     JSON.stringify(entries.map((e) => [e.prompt, e.result && e.result.pass]))
   );
+
+  // 10 — shot archiving: changed screens always archive; identical frames SKIP
+  setControl({ screens: ["rich1.png"], actThrows: false, assertPass: true });
+  r = await post("/shot", { purpose: "shot-a" });
+  check("10a first shot archives", r.saved === true, JSON.stringify(r));
+  setControl({ screens: ["rich2.png"], actThrows: false, assertPass: true });
+  r = await post("/shot", { purpose: "shot-b" });
+  check("10b changed screen archives (no false SKIP)", r.saved === true, JSON.stringify(r));
+  r = await post("/shot", { purpose: "shot-c" });
+  check("10c identical screen SKIPs", r.saved === false, JSON.stringify(r));
+
+  // 11 — UNRELIABLE assert: SDK-parse failure is not a FAIL, and never cached
+  setControl({ screens: ["rich2.png"], actThrows: false, assertUnreliable: true });
+  r = await post("/assert", { prompt: "the parse-failure canary" });
+  check("11a parse failure reports unreliable, not FAIL", r.unreliable === true && r.pass === null, JSON.stringify(r));
+  check("11b unreliable assert leaves no cache entry", !readCache().some((e) => e.prompt === "the parse-failure canary"));
+
+  // 12 — mid.sh assert: VERDICT protocol line + exit codes 0 / 1 / 3
+  setControl({ screens: ["rich1.png"], actThrows: false, assertPass: true, assertUnreliable: false });
+  const midsh = async (args) => {
+    const p = await new Promise((resolve) => {
+      const c = spawn("bash", [MID, "assert", ...args], {
+        cwd: work,
+        env: { ...process.env, MIDAGENT_PORT: String(PORT), MIDSCENE_SESSION: "s1" },
+      });
+      let out = "";
+      c.stdout.on("data", (d) => (out += d));
+      c.on("close", (rc) => resolve({ rc, out }));
+    });
+    return { rc: p.rc, last: p.out.trim().split("\n").pop() };
+  };
+  let m = await midsh(["the home screen is visible"]);
+  check("12a PASS protocol + exit 0", m.rc === 0 && /^VERDICT: PASS/.test(m.last), `rc=${m.rc} last=${m.last}`);
+  setControl({ screens: ["rich1.png"], actThrows: false, assertPass: false });
+  m = await midsh(["a mid.sh protocol fail check", "msg"]);
+  check("12b FAIL protocol + exit 1", m.rc === 1 && /^VERDICT: FAIL/.test(m.last), `rc=${m.rc} last=${m.last}`);
+  setControl({ screens: ["rich1.png"], actThrows: false, assertUnreliable: true });
+  m = await midsh(["a mid.sh protocol unreliable check"]);
+  check("12c UNRELIABLE protocol + exit 3", m.rc === 3 && /^VERDICT: UNRELIABLE/.test(m.last), `rc=${m.rc} last=${m.last}`);
 
   await stopDaemon();
 } finally {

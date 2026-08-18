@@ -47,7 +47,7 @@ Run `<skill-dir>/scripts/mid.sh <cmd>` from the project cwd (artifacts land in `
 | Open session | `scripts/mid.sh start <slug>` | creates `.midscene/<slug>/` (auto `-2/-3` on name clash) |
 | Look | `scripts/mid.sh shot <purpose>` | screenshot archived; identical frames **SKIPPED** (diff gate) |
 | Act | `scripts/mid.sh act "<whole flow>"` | one high-level prompt carrying a whole flow |
-| Verify | `scripts/mid.sh assert "<condition>"` | natural-language screen check, no UI action |
+| Verify | `scripts/mid.sh assert "<condition>"` | natural-language check, no UI action — exit 0/1/3 = PASS/FAIL/UNRELIABLE, last line `VERDICT: …`; `--json` for the full response |
 | Refresh | `scripts/mid.sh cache invalidate "<prompt>"` | drop one prompt's cached verdicts — re-assert it verbatim for a fresh one |
 | Finish | `scripts/mid.sh finish` | merge reports → `index.md` → cleanup, keep last 20 |
 | Stop daemon | `scripts/mid.sh agent stop` | release the connection |
@@ -98,15 +98,20 @@ stays verbatim, only the verdict is re-derived), `mid.sh cache clear` resets eve
    splitting the flow. State the irreversible steps so the act-vs-ask gate can fire before
    anything runs. (The daemon notes act prompts that read element-level — advisory only.)
 3. **Optimistic flow, lazy verification.** After a flow `act`, assert the **terminal state**
-   only — the daemon settles the screen before judging, so the verdict lands on the finished
-   state, not a transition frame. On failure, bisect: `assert` the intermediate checkpoints
-   to locate the last-good state, re-plan the remainder, `act` from there. Per-step asserts
-   are the smoke skill's contract, not the default.
+   only — the daemon settles the screen (two identical frames) before judging, so never
+   pre-sleep; the verdict lands on the finished state, not a transition frame. On failure,
+   bisect: `assert` the intermediate checkpoints to locate the last-good state, re-plan the
+   remainder, `act` from there. Per-step asserts are the smoke skill's contract, not the
+   default.
 4. **Verdict-driven, image-free.** Orchestrating means plan → `act` → `assert` → repeat;
-   every screen question goes through `assert` (cacheable, structured verdict). Reading a
-   screenshot yourself bloats your window for the rest of the session and never caches.
-   `shot` is a last-resort diagnostic — an element `act` cannot find, evidence for the user —
-   and the screen-map builder (first encounter).
+   every screen question goes through `assert` (cacheable, structured verdict) and branches
+   on its exit code — PASS/FAIL/UNRELIABLE — never on parsing prose. An assert the SDK
+   cannot parse (model answered, SDK failed — happens with some model+SDK combos) reports
+   `VERDICT: UNRELIABLE` (exit 3) and is never cached: record the combo in the map's hints,
+   cross-check `midscene_run/log/ai-call.log` or a reference image, and don't record a
+   verdict from it. Reading a screenshot yourself bloats your window for the rest of the
+   session and never caches. `shot` is a last-resort diagnostic — an element `act` cannot
+   find, evidence for the user — and the screen-map builder (first encounter).
 5. **Reuse prompts verbatim.** When the screen map holds a proven prompt for the step, run it
    word-for-word: exact assert prompt + same screen is a persistent-cache hit (zero LLM).
    Rewording is a cache miss and a fresh experiment.

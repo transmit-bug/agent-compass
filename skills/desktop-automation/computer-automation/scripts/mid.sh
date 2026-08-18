@@ -83,7 +83,15 @@ cmd_act() {
     body="$(python3 -c 'import json,sys;print(json.dumps({"prompt":sys.argv[1],"sessionDir":sys.argv[2]}))' "$prompt" "$dir")"
     resp="$(curl -sf -m 600 -X POST "http://127.0.0.1:$PORT/act" -H 'Content-Type: application/json' --data-binary "$body")"
     [ -n "$resp" ] || { echo "error: daemon /act failed" >&2; exit 1; }
-    python3 -c "import json,sys;d=json.loads(sys.argv[1]);print(d.get('msg',''));print('');print(d.get('result') or '')" "$resp"
+    python3 - "$resp" <<'PY'
+import json, sys
+d = json.loads(sys.argv[1])
+print(d.get("msg", ""))
+if d.get("note"): print(d["note"])
+r = d.get("result") or ""
+if r: print(); print(r)
+print("ACT: CACHED (retry gate)" if d.get("cached") else "ACT: OK")
+PY
   else
     $MIDSCENE act --prompt "$prompt" 2>&1 | grep -v "npm warn"
   fi
@@ -92,17 +100,42 @@ cmd_act() {
 cmd_assert() {
   local dir; dir="$(current)"
   [ -n "$dir" ] || { echo "error: run mid.sh start first" >&2; exit 2; }
-  local prompt="${2:-}"
-  [ -n "$prompt" ] || { echo "usage: mid.sh assert <prompt> [message]" >&2; exit 2; }
+  local args=() raw=0 a prompt message
+  for a in "$@"; do
+    if [ "$a" = "--json" ]; then raw=1; else args+=("$a"); fi
+  done
+  prompt="${args[1]:-}"; message="${args[2]:-}"
+  [ -n "$prompt" ] || { echo "usage: mid.sh assert <prompt> [message] [--json]" >&2; exit 2; }
   if daemon_up; then
     local body resp
-    body="$(python3 -c 'import json,sys;print(json.dumps({"prompt":sys.argv[1],"message":sys.argv[2] if len(sys.argv)>2 else None,"sessionDir":sys.argv[3]}))' "$prompt" "${3:-}" "$dir")"
+    body="$(python3 -c 'import json,sys;print(json.dumps({"prompt":sys.argv[1],"message":sys.argv[2] if len(sys.argv)>2 else None,"sessionDir":sys.argv[3]}))' "$prompt" "${message:-}" "$dir")"
     resp="$(curl -sf -m 600 -X POST "http://127.0.0.1:$PORT/assert" -H 'Content-Type: application/json' --data-binary "$body")"
     [ -n "$resp" ] || { echo "error: daemon /assert failed" >&2; exit 1; }
-    python3 -c "import json,sys;d=json.loads(sys.argv[1]);print(d.get('msg',''));print('thought:',d.get('thought') or '')" "$resp"
-  else
-    $MIDSCENE assert --prompt "$prompt" 2>&1 | grep -v "npm warn"
+    if [ "$raw" = 1 ]; then printf '%s\n' "$resp"; return 0; fi
+    # Protocol: last line VERDICT: PASS [cached] / FAIL / UNRELIABLE; exit 0 / 1 / 3 —
+    # callers branch on the exit code instead of parsing prose or the SDK log.
+    python3 - "$resp" <<'PY'
+import json, sys
+d = json.loads(sys.argv[1])
+print(d.get("msg", ""))
+if d.get("thought"): print("thought:", d["thought"])
+if d.get("note"): print(d["note"])
+cached = " [cached]" if d.get("cached") else ""
+if d.get("unreliable") or d.get("pass") is None:
+    print("VERDICT: UNRELIABLE" + cached)
+    sys.exit(3)
+print(("VERDICT: PASS" if d.get("pass") else "VERDICT: FAIL") + cached)
+sys.exit(0 if d.get("pass") else 1)
+PY
+    return $?
   fi
+  local out
+  out="$($MIDSCENE assert --prompt "$prompt" ${message:+--message "$message"} 2>&1 | grep -v "npm warn")"
+  printf '%s\n' "$out"
+  # CLI fallback — best-effort same protocol
+  if printf '%s' "$out" | grep -qiE 'pass[^a-z]*true|assertion (passed|succeed)'; then echo "VERDICT: PASS"; return 0
+  elif printf '%s' "$out" | grep -qiE 'pass[^a-z]*false|assertion failed'; then echo "VERDICT: FAIL"; return 1
+  else echo "VERDICT: UNRELIABLE"; return 3; fi
 }
 
 cmd_cache() {
@@ -282,7 +315,7 @@ usage:
   mid.sh start <slug>              start a session (.midscene/<slug>/) (english slug)
   mid.sh shot <purpose>            screenshot + archive (only changed frames, english purpose)
   mid.sh act <prompt>              perform an action (persistent cache: same screen + exact prompt → zero LLM)
-  mid.sh assert <prompt> [msg]     assert / verify
+  mid.sh assert <prompt> [msg] [--json]  assert — exit 0/1/3 = PASS/FAIL/UNRELIABLE, last line VERDICT:
   mid.sh cache clear|stats|invalidate <p> persistent result cache (.midscene/.cache.json)
   mid.sh finish                    merge reports → index.md → cleanup → keep last 20
   mid.sh ls / clean [N]            list / clean sessions
