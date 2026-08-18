@@ -56,29 +56,53 @@ Artifacts in `.midscene/<slug>/`: `index.md` (per-step conclusions), merged `rep
 `report.md`, `screenshots/NNN-<purpose>.png`. When the daemon is down, `mid.sh` falls back to
 the stateless CLI automatically.
 
+Before planning acts: if a **screen map** exists (`.midscene/screens.md`), read it — proven
+routes and verbatim prompts (→ cache hits, zero LLM). At `finish`, merge what this session
+learned back into it. The contract is owned by the **screen-verify** skill (same group,
+model-invoked primitive).
+
 ## Why the session — the cost gate
 
 Most consecutive frames are identical (measured 80–100%). The daemon compares each new frame
-to the last locally before the model ever runs: unchanged screen → skip the AI; unchanged
-screen **and** the same `act`/`assert` prompt → return the cached result. **Zero LLM on
-no-ops.** The session is done when `finish` has archived the report.
+to the last locally before the model ever runs: unchanged screen → skip the AI; same screen
+(perceptual hash) **and** the same `act`/`assert` prompt → the cached result — from a
+**persistent cache** (`.midscene/.cache.json`), so repeats hit across sessions too. **Zero
+LLM on no-ops and repeats.** `mid.sh cache stats` inspects it; `mid.sh cache clear` resets
+(after a model or app update, or when results smell stale). The session is done when
+`finish` has archived the report.
 
 ## Rules
 
 1. **One command at a time, synchronous.** Never background, never chain — each output
    (especially the screenshot) feeds the next decision. Commands take ~1 min (AI inference);
    that is not a hang.
-2. **Give `act` whole tasks.** Consecutive operations in one app belong in one prompt
-   ("search for X, click the first result, scroll down") — fewer screenshot-analyze cycles.
-3. **Foreground the app first.** `open -a <App>` (macOS) / `start <App>` (Windows), screenshot
+2. **Merge to the milestone.** One `act` per verifiable milestone — all operations of a phase
+   in a single prompt ("open the Export dialog, choose PDF, save it to the Desktop"), then
+   `assert` the milestone before the next `act`. A whole long task in one `act` cannot be
+   corrected mid-course; a milestone can.
+3. **Assert, don't look.** Prefer `assert` — the model reads the screen and returns a
+   verdict. Every `shot` you read yourself is a second model pass over the same pixels.
+   Reserve `shot` for: first encounter of a screen (map entry), debugging a failure, evidence
+   the user must see.
+4. **Reuse prompts verbatim.** When the screen map holds a proven prompt for the step, run it
+   word-for-word: exact prompt + same screen is a persistent-cache hit (zero LLM). Rewording
+   is a cache miss and a fresh experiment.
+5. **Foreground the app first.** `open -a <App>` (macOS) / `start <App>` (Windows), screenshot
    to confirm it is visible, then automate. Avoid launcher-search flows through midscene.
-4. **Be specific about elements**: color, position, surrounding text ("the yellow minimize
+6. **Be specific about elements**: color, position, surrounding text ("the yellow minimize
    button in the top-left corner of the Safari window").
-5. **Minimize, don't close.** Never close an app or window unless the user explicitly asks.
-6. **On failure, re-screenshot and re-describe** the element; check it is not behind another
+7. **Minimize, don't close.** Never close an app or window unless the user explicitly asks.
+8. **On failure, re-screenshot and re-describe** the element; check it is not behind another
    window — don't continue blindly.
-7. **RDP (remote Windows host)**: `npx -y @midscene/computer@1 connect --host <fqdn> --username <user> --password "$RDP_PASSWORD"`, and repeat those flags on every command (each CLI invocation reconnects). Full RDP reference: [references/command-reference.md](references/command-reference.md) → **Connect via RDP**.
-8. **Report before finishing**: outcome, key data, paths of generated files. Never end silently.
+9. **RDP (remote Windows host)**: `npx -y @midscene/computer@1 connect --host <fqdn> --username <user> --password "$RDP_PASSWORD"`, and repeat those flags on every command (each CLI invocation reconnects). Full RDP reference: [references/command-reference.md](references/command-reference.md) → **Connect via RDP**.
+10. **Report before finishing**: outcome, key data, paths of generated files. Never end silently.
+
+## Long tasks
+
+Midscene decomposes inside a single `act` but shares nothing between calls — **you are the
+memory across calls**. Plan the route on the screen map first, then per screen: `assert` the
+anchor → one merged `act` for that screen's operations → `assert` the milestone → update the
+map entry.
 
 ## Advanced options
 

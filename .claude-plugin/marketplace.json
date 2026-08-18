@@ -13,9 +13,10 @@
       "source": "./",
       "skills": [
         "./skills/desktop-automation/computer-automation",
-        "./skills/desktop-automation/smoke-runner",
-        "./skills/desktop-automation/ui-fixer",
-        "./skills/desktop-automation/uichecker"
+        "./skills/desktop-automation/screen-verify",
+        "./skills/desktop-automation/screen-checker",
+        "./skills/desktop-automation/screen-fixer",
+        "./skills/desktop-automation/screen-smoke"
       ]
     },
     {

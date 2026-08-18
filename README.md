@@ -20,10 +20,9 @@ agent-compass/
 │   │   ├── agentsmd/             # root | layered | rules — one skill, three modes
 │   │   └── readmemd/              # create | refresh | trim — the stranger's front door
 │   ├── desktop-automation/    # desktop automation (drive/verify/fix)
-│   │   ├── computer-automation/
-│   │   ├── uichecker/
-│   │   ├── ui-fixer/
-│   │   └── smoke-runner/
+│   │   ├── computer-automation/           # operation layer (mid.sh session)
+│   │   ├── screen-verify/                 # primitive (verdicts, screen map)
+│   │   └── screen-checker/ screen-fixer/ screen-smoke/   # business
 │   ├── agent-browser/            # web dev/test/maintain/smoke/logic (structure-first)
 │   │   ├── agent-browser/        # operation-layer stub (vendor-tracked from vercel-labs/agent-browser)
 │   │   ├── web-router/  web-verify/  web-setup/   # entry + primitive + onboarding
@@ -64,7 +63,7 @@ Or install specific skills:
 
 ```bash
 npx skills add transmit-bug/agent-compass --skill agentsmd
-npx skills add transmit-bug/agent-compass --skill computer-automation --skill uichecker --skill ui-fixer --skill smoke-runner
+npx skills add transmit-bug/agent-compass --skill computer-automation --skill screen-verify --skill screen-checker --skill screen-fixer --skill screen-smoke
 ```
 
 ## Categories
@@ -81,33 +80,34 @@ what a human needs. Each is one skill with three modes.
 
 ### desktop-automation — desktop-application automation
 
-Vision-driven desktop control (Midscene) split into two layers, with one-way, explicit dependencies:
+Vision-driven desktop control (Midscene) instantiating the category blueprint — operation layer, model-invoked primitive, business skills with one shared opening:
 
-- **Operation layer** — `computer-automation`: a persistent **session** daemon that connects once, gates every AI call behind a local screen-diff (zero LLM on unchanged frames), and archives every run (`index.md` + merged report). This is the midscene wrapper — the cost and speed optimization.
-- **Business layer** — `uichecker`, `ui-fixer`, `smoke-runner`: software-development workflows built on top of the session. Each is an independent skill with a single dependency: `computer-automation`.
+- **Operation layer** — `computer-automation`: a persistent **session** daemon that connects once, gates every AI call behind a local screen-diff (zero LLM on unchanged frames), caches (screen, prompt) results persistently, and archives every run (`index.md` + merged report). This is the midscene wrapper — the cost and speed optimization.
+- **Primitive** — `screen-verify` (model-invoked): the verification discipline — checkpoint verdicts with evidence, the screen map (`.midscene/screens.md`, built by traversal), act-vs-ask.
+- **Business layer** — `screen-checker`, `screen-fixer`, `screen-smoke`: user-invoked workflows, each opening with "run the screen-verify discipline … invoke computer-automation by name alongside this one" and depending one-way on the layers below.
 
 ```
-Business layer (user-invoked)             Operation layer (user-invoked)
-┌────────────────────────────┐           ┌──────────────────────────────────────────┐
-│  uichecker     verify UI   │           │  computer-automation (SKILL.md)           │
-│  ui-fixer      fix to      │──────────▶│    ├─ scripts/mid.sh        session       │
-│                match image │  depends  │    │    └─ midagent.js       daemon       │
-│  smoke-runner  run flow +  │   on      │    ├─ scripts/screen-diff.py  diff gate   │
-│                PASS/FAIL   │           │    ├─ scripts/extract-steps.py  report    │
-└────────────────────────────┘           │    └─ npx @midscene/computer@1  CLI (fb)  │
-                                         └──────────────────────────────────────────┘
+Business (user-invoked)      Primitive (model-invoked)   Operation (user-invoked)
+┌────────────────────┐      ┌──────────────────┐      ┌───────────────────────────┐
+│ screen-checker     │      │ screen-verify    │      │ computer-automation       │
+│ screen-fixer    ───┼─prose▶ verdicts,        │─uses▶│  scripts/mid.sh  session  │
+│ screen-smoke       │      │ evidence,        │      │  midagent.js     daemon   │
+└────────────────────┘      │ screen map,      │      │  screen-diff.py  gate     │
+         └──────────depends on───────────────▶ act-vs-ask └──▶ npx @midscene/computer@1 (fallback)
 ```
+
 
 - `uichecker` → `computer-automation` → `scripts/mid.sh` → `midagent.js` (daemon; resolves `@midscene/computer` from the project `node_modules`, falling back to a machine-wide global install) with `screen-diff.py` gate; falls back to the stateless CLI.
-- `ui-fixer` additionally uses ImageMagick `compare` for the pixel signal and edits source code itself (the only business skill that changes code).
-- Runtime deps: node ≥ 18, python3 + Pillow, ImageMagick (`uichecker`, `ui-fixer`).
+- `screen-fixer` additionally uses ImageMagick `compare` for the pixel signal and edits source code itself (the only business skill that changes code).
+- Runtime deps: node ≥ 18, python3 + Pillow, ImageMagick (`screen-checker`, `screen-fixer`).
 - **Model config is assumed** (`MIDSCENE_MODEL_*` in `.env`) — deliberately not documented inside the skills; it is environment setup, not a workflow concern.
 
 All four skills are **user-invoked** (`disable-model-invocation: true`): the group costs zero
 context and nothing fires without your call — desktop automation takes over your real mouse
-and keyboard, so that gate is deliberate. Name the skill(s) you need: "uichecker +
-computer-automation, check the export dialog", "ui-fixer + computer-automation, make the UI
-match this image", "smoke-runner + computer-automation, verify the export flow".
+and keyboard, so that gate is deliberate. Name the skill(s) you need: "screen-checker +
+computer-automation, check the export dialog", "screen-fixer + computer-automation, make
+the UI match this image", "screen-smoke + computer-automation, verify the export flow".
+The `screen-verify` primitive is model-invoked — it loads itself when a session needs it.
 
 **Extending the group**: a new business workflow is a new `<category>/<name>/SKILL.md` under
 `skills/desktop-automation/` with `disable-model-invocation: true`, a `## Dependencies` section

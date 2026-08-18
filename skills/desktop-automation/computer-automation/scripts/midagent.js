@@ -5,7 +5,11 @@
  * Session state lives in this process, implementing "local compare, LLM on demand":
  *   - Connect once, health-check once (the CLI repeats both on every call)
  *   - Local screenshot diff (screen-diff.py --strict): screen unchanged → zero LLM
- *   - act/assert gate: screen unchanged + same prompt → return the cached result
+ *   - Persistent result cache (screen-diff.py --hash + .midscene/.cache.json):
+ *     same screen (dHash hamming ≤ MIDAGENT_CACHE_DIST) + exact same prompt → the
+ *     cached act/assert result, across sessions. This is the desktop analog of
+ *     midscene's task cache — it assumes a visually identical screen resolves a
+ *     verbatim prompt identically; clear with mid.sh cache clear after model/app changes.
  *
  * Start: node midagent.js serve        (pair with mid.sh agent start)
  * Port: 127.0.0.1:39417 (override with MIDAGENT_PORT)
@@ -21,6 +25,12 @@ const ROOT = process.cwd();
 const MDS = path.join(ROOT, ".midscene");
 const PORT = Number(process.env.MIDAGENT_PORT || 39417);
 const SCREEN_DIFF = path.join(__dirname, "screen-diff.py");
+const PCACHE_FILE = path.join(MDS, ".cache.json");
+// 0 disables the persistent cache; distance is dHash hamming bits (≤ 4): same screen
+// with a clock/caret change lands at 1–2 bits; degenerate near-blank screens can
+// collide higher, hence the tight default.
+const CACHE_MAX = Number(process.env.MIDAGENT_CACHE_MAX ?? 200);
+const CACHE_DIST = Number(process.env.MIDAGENT_CACHE_DIST ?? 4);
 
 // 1) Load .env (never override existing env vars; model config is read at first AI call,
 //    so late loading is fine)
@@ -36,7 +46,7 @@ if (fs.existsSync(path.join(ROOT, ".env"))) {
 let agent = null;
 let startedAt = null;
 let lastFrame = null; // most recently captured frame path (gate baseline)
-let cache = null; // { prompt, kind, result }
+let pcache = []; // [{ h: dHashHex, kind: "act"|"assert", prompt, result, ts }]
 
 // ---------- local diff (strict mode: any >=0.05% change is a real state change) ----------
 function diffStrict(a, b) {
@@ -52,6 +62,71 @@ function diffStrict(a, b) {
 
 function screenSame(a, b) {
   return diffStrict(a, b).startsWith("SAME");
+}
+
+// ---------- persistent result cache (screen hash + exact prompt → result) ----------
+function dhashHex(file) {
+  try {
+    return (
+      execFileSync("python3", [SCREEN_DIFF, "--hash", file], {
+        encoding: "utf8",
+      }).trim() || null
+    );
+  } catch (e) {
+    return String(e.stdout || "").trim() || null;
+  }
+}
+
+function hammingHex(aHex, bHex) {
+  let x = BigInt("0x" + aHex) ^ BigInt("0x" + bHex);
+  let c = 0;
+  while (x) {
+    c += Number(x & 1n);
+    x >>= 1n;
+  }
+  return c;
+}
+
+function pcacheLoad() {
+  try {
+    const raw = JSON.parse(fs.readFileSync(PCACHE_FILE, "utf8"));
+    pcache = Array.isArray(raw) ? raw : [];
+  } catch {
+    pcache = [];
+  }
+}
+
+function pcachePersist() {
+  try {
+    fs.mkdirSync(MDS, { recursive: true });
+    const tmp = PCACHE_FILE + ".tmp";
+    fs.writeFileSync(tmp, JSON.stringify(pcache));
+    fs.renameSync(tmp, PCACHE_FILE);
+  } catch {}
+}
+
+function pcacheLookup(kind, prompt, h) {
+  if (!h || CACHE_MAX <= 0) return null;
+  let best = null;
+  for (const e of pcache) {
+    if (e.kind !== kind || e.prompt !== prompt) continue;
+    const d = hammingHex(e.h, h);
+    if (d <= CACHE_DIST && (!best || d < best.d)) best = { ...e, d };
+  }
+  return best;
+}
+
+function pcacheStore(kind, prompt, h, result) {
+  if (!h || CACHE_MAX <= 0) return;
+  // The cache key is (kind, prompt, screen): evict only same-prompt entries on a
+  // perceptually same screen (within CACHE_DIST) — the same prompt on a different
+  // screen is a distinct result and must survive.
+  pcache = pcache.filter(
+    (e) => !(e.kind === kind && e.prompt === prompt && hammingHex(e.h, h) <= CACHE_DIST)
+  );
+  pcache.push({ h, kind, prompt, result, ts: new Date().toISOString() });
+  while (pcache.length > CACHE_MAX) pcache.shift();
+  pcachePersist();
 }
 
 // ---------- screenshot ----------
@@ -100,8 +175,17 @@ async function handle(req, res) {
       ok: !!agent,
       startedAt,
       lastFrame,
-      cachePrompt: cache ? cache.prompt : null,
+      cacheEntries: pcache.length,
+      cacheMax: CACHE_MAX,
+      cacheDist: CACHE_DIST,
     });
+  if (req.method === "POST" && url === "/cache/clear") {
+    pcache = [];
+    try {
+      fs.unlinkSync(PCACHE_FILE);
+    } catch {}
+    return json(res, 200, { ok: true, msg: "persistent cache cleared" });
+  }
   if (req.method === "POST" && url === "/stop") {
     try {
       await agent?.destroy?.();
@@ -154,20 +238,26 @@ async function handle(req, res) {
     return json(res, 200, { ok: true, saved, path: pathOut, msg });
   }
 
-  // POST /act { prompt } —— gate: screen unchanged + same prompt → cached, zero LLM
+  // POST /act { prompt } —— gate: same screen (dHash) + exact same prompt → cached, zero LLM
   if (url === "/act") {
     const prompt = String(body.prompt || "");
     if (!prompt) return json(res, 400, { error: "prompt required" });
     const cap = await captureTo(dir, ".last.png");
-    const unchanged =
-      lastFrame && fs.existsSync(lastFrame) && screenSame(lastFrame, cap);
-    if (unchanged && cache && cache.prompt === prompt && cache.kind === "act") {
+    const h = dhashHex(cap);
+    const hit = pcacheLookup("act", prompt, h);
+    if (hit) {
       lastFrame = cap;
-      return json(res, 200, { ok: true, cached: true, llm: false, result: cache.result, msg: "CACHED screen unchanged, reused last result (zero LLM)" });
+      return json(res, 200, {
+        ok: true,
+        cached: true,
+        llm: false,
+        result: hit.result,
+        msg: `CACHED screen matches (hamming ${hit.d}/${CACHE_DIST}) + same prompt, reused result (zero LLM)`,
+      });
     }
     const result = await agent.aiAct(prompt);
     lastFrame = cap;
-    cache = { prompt, kind: "act", result };
+    pcacheStore("act", prompt, h, result);
     return json(res, 200, { ok: true, cached: false, llm: true, result, msg: "act done" });
   }
 
@@ -176,11 +266,17 @@ async function handle(req, res) {
     const prompt = String(body.prompt || "");
     if (!prompt) return json(res, 400, { error: "prompt required" });
     const cap = await captureTo(dir, ".last.png");
-    const unchanged =
-      lastFrame && fs.existsSync(lastFrame) && screenSame(lastFrame, cap);
-    if (unchanged && cache && cache.prompt === prompt && cache.kind === "assert") {
+    const h = dhashHex(cap);
+    const hit = pcacheLookup("assert", prompt, h);
+    if (hit) {
       lastFrame = cap;
-      return json(res, 200, { ok: true, cached: true, llm: false, ...cache.result, msg: "CACHED screen unchanged, reused last assertion result (zero LLM)" });
+      return json(res, 200, {
+        ok: true,
+        cached: true,
+        llm: false,
+        ...hit.result,
+        msg: `CACHED screen matches (hamming ${hit.d}/${CACHE_DIST}) + same prompt, reused assertion result (zero LLM)`,
+      });
     }
     const r = await agent.aiAssert(prompt, body.message || undefined);
     const result = {
@@ -189,7 +285,7 @@ async function handle(req, res) {
       message: r?.message ?? null,
     };
     lastFrame = cap;
-    cache = { prompt, kind: "assert", result };
+    pcacheStore("assert", prompt, h, result);
     return json(res, 200, { ok: true, cached: false, llm: true, ...result, msg: result.pass ? "Assertion passed." : "Assertion failed." });
   }
 
@@ -198,6 +294,7 @@ async function handle(req, res) {
 
 // ---------- lifecycle ----------
 async function main() {
+  pcacheLoad();
   const { agentForComputer } = require("@midscene/computer");
   const t0 = Date.now();
   agent = await agentForComputer({});

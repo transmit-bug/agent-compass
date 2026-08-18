@@ -5,6 +5,7 @@
 #   mid.sh start <slug>      start a session (auto -2/-3 on name clash)
 #   mid.sh shot <purpose>    take a screenshot and archive it as screenshots/NNN-purpose.png
 #   mid.sh finish            collect reports → markdown → index.md → cleanup → keep last 20 sessions
+#   mid.sh cache clear|stats persistent act/assert result cache (screen hash + exact prompt)
 #   mid.sh ls                list sessions by time
 #   mid.sh clean [N]         manual cleanup (default keeps 20)
 set -u
@@ -101,11 +102,38 @@ cmd_assert() {
   fi
 }
 
+cmd_cache() {
+  case "${2:-}" in
+    clear)
+      if daemon_up; then
+        curl -sf -m 5 -X POST "http://127.0.0.1:$PORT/cache/clear" >/dev/null 2>&1
+        echo "persistent cache cleared (daemon memory + $ROOT/.cache.json)"
+      else
+        rm -f "$ROOT/.cache.json"
+        echo "persistent cache cleared ($ROOT/.cache.json)"
+      fi
+      ;;
+    stats)
+      if daemon_up; then
+        curl -sf -m 3 "http://127.0.0.1:$PORT/status" | python3 -c "import json,sys;d=json.load(sys.stdin);print('cache entries:',d.get('cacheEntries'),'/',d.get('cacheMax'),'  match distance <=',d.get('cacheDist'))"
+      else
+        if [ -f "$ROOT/.cache.json" ]; then
+          python3 -c "import json;print('cache entries:',len(json.load(open('$ROOT/.cache.json'))),'(daemon down)')"
+        else
+          echo "no persistent cache yet (daemon down)"
+        fi
+      fi
+      ;;
+    *) echo "usage: mid.sh cache clear|stats" >&2; exit 2 ;;
+  esac
+}
+
 cmd_agent() {
   local action="${2:-status}"
   case "$action" in
     start)
       if daemon_up; then echo "daemon already running (port $PORT)"; return; fi
+      mkdir -p "$ROOT"
       # Resolve @midscene/computer from the project's node_modules first, falling back to a
       # machine-wide global install (npm i -g @midscene/computer).
       export NODE_PATH="${NODE_PATH:+$NODE_PATH:}$(npm root -g 2>/dev/null)"
@@ -217,6 +245,7 @@ case "${1:-}" in
   act)    cmd_act "$@" ;;
   assert) cmd_assert "$@" ;;
   agent)  cmd_agent "$@" ;;
+  cache)  cmd_cache "$@" ;;
   finish) cmd_finish ;;
   ls)     cmd_ls ;;
   clean)  cmd_clean "$@" ;;
@@ -227,8 +256,9 @@ usage:
   mid.sh agent start|stop|status   persistent session daemon (local diff gate, LLM on demand)
   mid.sh start <slug>              start a session (.midscene/<slug>/) (english slug)
   mid.sh shot <purpose>            screenshot + archive (only changed frames, english purpose)
-  mid.sh act <prompt>              perform an action (daemon gate: unchanged screen + same prompt → cached)
+  mid.sh act <prompt>              perform an action (persistent cache: same screen + exact prompt → zero LLM)
   mid.sh assert <prompt> [msg]     assert / verify
+  mid.sh cache clear|stats         persistent result cache (.midscene/.cache.json)
   mid.sh finish                    merge reports → index.md → cleanup → keep last 20
   mid.sh ls / clean [N]            list / clean sessions
 EOF

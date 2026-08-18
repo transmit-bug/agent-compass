@@ -1,5 +1,5 @@
 ---
-name: ui-fixer
+name: screen-fixer
 description: Fix a running desktop app's UI until the live screen matches a reference image or design mock.
 disable-model-invocation: true
 allowed-tools:
@@ -9,34 +9,33 @@ allowed-tools:
   - Write
 ---
 
-# UI Fixer (business layer)
+# Screen Fixer (business layer)
 
 Make the app's rendered UI match a reference image (design mock, screenshot, previous
 version). Closed loop: shoot → compare → judge → fix → rebuild → re-shoot, until the screen
 is visually consistent. The **screen is the source of truth**; the code is what you change.
-Invoked by name — "use ui-fixer to make the UI match this image".
+Invoked by name — "use screen-fixer to make the UI match this image".
 
-## Dependencies
+Run the **screen-verify** discipline for verdicts, evidence, and the screen map; the
+machinery — `mid.sh` session, daemon, persistent cache — is **computer-automation**'s:
+invoke it by name alongside this one.
 
-- `computer-automation` skill (same group, operation layer) — **invoke it by name alongside
-  this one**; it provides the `mid.sh` session for shooting the live app.
-- ImageMagick `compare` — pixel-difference signal.
-- The app under development must be rebuildable or refreshable by the agent (a dev-server
-  reload, or a build command you can run and relaunch).
+Also needs: ImageMagick `compare` (pixel-difference signal), and an app that is rebuildable
+or refreshable by the agent (dev-server reload, or a build command you can run and relaunch).
 
 ## Ground truth
 
-The reference image (user-provided, or a `shot` archived as the intended state). Agree on the
-**stop threshold** up front: RMSE below a given value, or the user's visual confirmation.
-The reference is fixed — never "fixed" by editing the reference.
+The reference image (user-provided, or a `shot` archived as the intended state). Agree on
+the **stop threshold** up front: RMSE below a given value, or the user's visual
+confirmation. The reference is fixed — never "fixed" by editing the reference.
 
 ## The loop — iterate until consistent
 
 1. `mid.sh start <slug>`; `mid.sh shot baseline` to archive the current render.
 2. **Compare**: `compare -metric RMSE -highlight-color red ref.png actual.png diff.png`
    — the signal (0 = identical).
-3. **Judge**: read the reference, the current screenshot, and diff.png together; list what is
-   off — missing element, misplacement, wrong data, wrong colors, broken layout.
+3. **Judge**: read the reference, the current screenshot, and diff.png together; list what
+   is off — missing element, misplacement, wrong data, wrong colors, broken layout.
 4. **Fix**: edit the source code to close one gap at a time (smallest change that addresses
    it). Midscene is the eye; you are the hand.
 5. **Rebuild / refresh** the app, then `mid.sh shot`.
@@ -46,7 +45,7 @@ The reference is fixed — never "fixed" by editing the reference.
 ## Convergence rules
 
 - Fix the **biggest gap first** (highest visual weight) — closing the dominant difference
-   usually collapses several smaller ones.
+  usually collapses several smaller ones.
 - After two attempts on the same gap, re-screenshot and re-describe the element; check the
   app did not crash or hang before touching the code again.
 - If a change made things worse, revert it (git checkout / undo) before trying the next one.

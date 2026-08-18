@@ -4,6 +4,7 @@ avoiding AI calls on repeated frames.
 
 Usage:
   python3 screen-diff.py <img_a> <img_b> [--threshold 1.0]
+  python3 screen-diff.py <img_a> --hash        print the 64-bit dHash of img_a as hex
 
 Output:
   SAME 0.00%  dHash_hamming=0/64     (exit 0 → screen unchanged, skip AI, reuse last analysis)
@@ -38,13 +39,22 @@ def hamming(a, b):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("img_a")
-    ap.add_argument("img_b")
+    ap.add_argument("img_b", nargs="?")
+    ap.add_argument("--hash", action="store_true",
+                    help="print the 64-bit dHash of img_a as 16-char hex and exit "
+                         "(stable cache key for a perceptually identical screen)")
     ap.add_argument("--threshold", type=float, default=1.0,
                     help="pixel-diff %% threshold; below is considered SAME (default 1.0)")
     ap.add_argument("--strict", action="store_true",
                     help="strict mode: record every frame except fully identical (back-to-back "
                          "screenshots measure 0.00%% identical; >0.05%% is a real state change)")
     args = ap.parse_args()
+
+    if args.hash:
+        print(f"{dhash(args.img_a):016x}")
+        sys.exit(0)
+    if not args.img_b:
+        ap.error("img_b is required unless --hash is given")
 
     a, b = load(args.img_a), load(args.img_b)
     d = diff_pct(a, b)

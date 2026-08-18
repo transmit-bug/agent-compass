@@ -50,8 +50,9 @@ parts where useful. The blueprint's glossary is the canonical vocabulary.
 3. SKILL.md must follow:
    - All skills in this repo are `disable-model-invocation: true` (user-invoked, zero
      context load) — **exceptions**: the `frontend` group (and the `agent-browser`
-     operation-layer stub) and `content-manager/agentsmd` ship model-invoked by design;
-     their value is automatic reach, so the zero-context rule is waived there
+     operation-layer stub), `content-manager/agentsmd`, and the group primitives
+     (`agent-browser/web-verify`, `desktop-automation/screen-verify`) ship model-invoked
+     by design; their value is automatic reach, so the zero-context rule is waived there
    - Steps have checkable completion criteria; guardrails are stated positively
    - Shared mechanics and contracts ship **inside the skill that owns them**
      (`<skill>/scripts/`, `<skill>/references/`) — the install surface is per-skill
