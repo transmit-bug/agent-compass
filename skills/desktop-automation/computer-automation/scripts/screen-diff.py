@@ -5,6 +5,8 @@ avoiding AI calls on repeated frames.
 Usage:
   python3 screen-diff.py <img_a> <img_b> [--threshold 1.0]
   python3 screen-diff.py <img_a> --hash        print the 64-bit dHash of img_a as hex
+  python3 screen-diff.py <img_a> --lowinfo     print LOWINFO if the frame is near-blank/
+                                               low-entropy (dHash keying unreliable), else OK
 
 Output:
   SAME 0.00%  dHash_hamming=0/64     (exit 0 → screen unchanged, skip AI, reuse last analysis)
@@ -43,6 +45,9 @@ def main():
     ap.add_argument("--hash", action="store_true",
                     help="print the 64-bit dHash of img_a as 16-char hex and exit "
                          "(stable cache key for a perceptually identical screen)")
+    ap.add_argument("--lowinfo", action="store_true",
+                    help="print LOWINFO if img_a is near-blank/low-entropy — such frames "
+                         "collide under dHash and must not key a cache — else OK")
     ap.add_argument("--threshold", type=float, default=1.0,
                     help="pixel-diff %% threshold; below is considered SAME (default 1.0)")
     ap.add_argument("--strict", action="store_true",
@@ -52,6 +57,16 @@ def main():
 
     if args.hash:
         print(f"{dhash(args.img_a):016x}")
+        sys.exit(0)
+    if args.lowinfo:
+        # A near-blank frame (solid color, empty canvas) has a degenerate dHash that
+        # collides with other near-blank frames. Detect via the 160x90 grayscale load:
+        # few distinct values or tiny spread → not a reliable cache key.
+        vals = load(args.img_a)
+        distinct = len(set(vals))
+        mean = sum(vals) / len(vals)
+        spread = (sum((x - mean) ** 2 for x in vals) / len(vals)) ** 0.5
+        print("LOWINFO" if distinct < 16 or spread < 2.0 else "OK")
         sys.exit(0)
     if not args.img_b:
         ap.error("img_b is required unless --hash is given")

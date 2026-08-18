@@ -48,13 +48,16 @@ Run `<skill-dir>/scripts/mid.sh <cmd>` from the project cwd (artifacts land in `
 | Look | `scripts/mid.sh shot <purpose>` | screenshot archived; identical frames **SKIPPED** (diff gate) |
 | Act | `scripts/mid.sh act "<whole flow>"` | one high-level prompt carrying a whole flow |
 | Verify | `scripts/mid.sh assert "<condition>"` | natural-language screen check, no UI action |
+| Refresh | `scripts/mid.sh cache invalidate "<prompt>"` | drop one prompt's cached verdicts — re-assert it verbatim for a fresh one |
 | Finish | `scripts/mid.sh finish` | merge reports → `index.md` → cleanup, keep last 20 |
 | Stop daemon | `scripts/mid.sh agent stop` | release the connection |
 | List | `scripts/mid.sh ls` | archived sessions |
 
 Artifacts in `.midscene/<slug>/`: `index.md` (per-step conclusions), merged `report.html` +
 `report.md`, `screenshots/NNN-<purpose>.png`. When the daemon is down, `mid.sh` falls back to
-the stateless CLI automatically.
+the stateless CLI automatically. One daemon drives one connection — for parallel agents in
+one project, pin a session per shell with `export MIDSCENE_SESSION=<slug>` (separate session
+pointers), or run a second daemon on another port (`MIDAGENT_PORT`).
 
 Before planning acts: if a **screen map** exists (`.midscene/screens.md`), read it — proven
 routes and verbatim prompts (→ cache hits, zero LLM). At `finish`, merge what this session
@@ -63,29 +66,42 @@ model-invoked primitive).
 
 ## Why the session — the cost gate
 
-Most consecutive frames are identical (measured 80–100%). The daemon compares each new frame
-to the last locally before the model ever runs: unchanged screen → skip the AI; a repeated
-`act` on a bit-identical screen reuses the last result (retry gate); a **verified assertion**
-on a same screen (perceptual hash) with the **exact same prompt** returns the cached verdict
-from `.midscene/.cache.json` — across sessions. **Zero LLM on no-ops and re-assertions.**
-`mid.sh cache stats` inspects the cache; `mid.sh cache clear` resets it (after a model or app
-update, or when verdicts smell stale). The session is done when `finish` has archived the
-report.
+Most consecutive frames are identical (measured 80–100%), and every capture waits for the
+screen to **settle** (two consecutive identical frames) before it is judged — asserting a
+half-drawn transition produces a phantom failure and a cache key that never hits again.
+Past the settle gate, the daemon compares each new frame to the last locally before the
+model ever runs: unchanged screen → skip the AI; a repeated `act` on an unchanged screen
+reuses the last **successful** result (retry gate — a failed act always re-executes); a
+**passing assertion** on a same screen (perceptual hash) with the **exact same prompt**
+returns the cached verdict from `.midscene/.cache.json` — across sessions. **Zero LLM on
+no-ops and re-assertions.** Failed assertions and low-information frames (near-blank
+screens whose hash collides) are never cached. `mid.sh cache stats` inspects the cache,
+`mid.sh cache invalidate "<prompt>"` refreshes one prompt (the staleness move — the wording
+stays verbatim, only the verdict is re-derived), `mid.sh cache clear` resets everything
+(after a model or app update). The session is done when `finish` has archived the report.
 
 ## Rules
 
 1. **One command at a time, synchronous.** Never background, never chain — each output
    (especially the screenshot) feeds the next decision. Commands take ~1 min (AI inference);
    that is not a hang.
-2. **One `act` per coherent flow.** Midscene plans-executes-replans *inside* a single `act`
-   with shared context; between calls it shares nothing. Give `act` the whole flow — every
-   operation with its intended effect ("open the Export dialog, choose CSV, name the file
-   ledger-2026, click Save") — and verify with `assert`, not by splitting the flow. State the
-   irreversible steps so the act-vs-ask gate can fire before anything runs.
+2. **One `act` per coherent flow — never per element.** Midscene plans-executes-replans
+   *inside* a single `act` with shared context; between calls it shares nothing. Every
+   `act` is a full planning cycle, so an element-level prompt (`act "click the login
+   button"`) buys one click for one cycle and drags you into orchestrating the UI
+   element-by-element — the slow, expensive shape this session exists to avoid. Give `act`
+   the whole flow: every operation with its intended effect, ending in the state that
+   proves it done — "fill in the username and password, click Login, and confirm the home
+   screen loads"; longer flows ("open the Export dialog, choose CSV, name the file
+   ledger-2026, click Save, and confirm the saved toast") are the norm. If a prompt names a
+   single element, fold it into its neighboring flow. Verify with `assert`, not by
+   splitting the flow. State the irreversible steps so the act-vs-ask gate can fire before
+   anything runs. (The daemon notes act prompts that read element-level — advisory only.)
 3. **Optimistic flow, lazy verification.** After a flow `act`, assert the **terminal state**
-   only. On failure, bisect: `assert` the intermediate checkpoints to locate the last-good
-   state, re-plan the remainder, `act` from there. Per-step asserts are the smoke skill's
-   contract, not the default.
+   only — the daemon settles the screen before judging, so the verdict lands on the finished
+   state, not a transition frame. On failure, bisect: `assert` the intermediate checkpoints
+   to locate the last-good state, re-plan the remainder, `act` from there. Per-step asserts
+   are the smoke skill's contract, not the default.
 4. **Verdict-driven, image-free.** Orchestrating means plan → `act` → `assert` → repeat;
    every screen question goes through `assert` (cacheable, structured verdict). Reading a
    screenshot yourself bloats your window for the rest of the session and never caches.
@@ -116,6 +132,8 @@ resume from the last-good anchor. Update the map at `finish`.
 `tap --locate` (precise targeting from a reference image), `assert --image`, `record` +
 `assert --record` (transient UI), `report-tool`, `--deep-locate` / `--deep-think`, and
 troubleshooting: see [references/command-reference.md](references/command-reference.md).
+Cache/gate semantics are locked by a regression suite (stubbed SDK, no LLM):
+`node scripts/test/regression.mjs`.
 
 ## Example — one session end to end
 

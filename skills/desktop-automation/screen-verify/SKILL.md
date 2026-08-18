@@ -23,7 +23,9 @@ assert-don't-look, verbatim prompts) apply unchanged.
   paths, assertion output, RMSE values. An interrupted run keeps its recorded verdicts.
 - **The screen map first.** Before planning acts, read `.midscene/screens.md` if it
   exists — launch commands, proven routes, verbatim prompts (→ persistent-cache hits on
-  anchors). At `finish`, merge what the session learned back. Contract:
+  anchors), and code-derived **hints** (assumptions to verify — they inform planning and
+  phrasing, never cache claims). At `finish`, merge what the session learned back;
+  promote or delete the hints this session proved or disproved. Contract:
   references/screen-map.md.
 - **The report closes the run.** Verdict → actions taken → evidence paths → next step.
   Never end silently.
@@ -39,11 +41,18 @@ assert-don't-look, verbatim prompts) apply unchanged.
 
 Smoke runs phrase these per step: pass (match or drift) / fail (regression) / unsure.
 
+A cached verdict repeats the model's earlier judgment; it does not re-derive it. When a
+cached PASS contradicts what you expect, ground it before trusting it — `assert --image`
+against a reference, or an RMSE compare — and refresh the wording with
+`mid.sh cache invalidate "<prompt>"` + a verbatim re-assert.
+
 ## Act-vs-ask
 
 Act on every answer the code, the records, and the screen can derive. Ask only when an
 action is irreversible or expensive (submit, overwrite, delete) or the evidence does not
-resolve. Keep sensitive content out of screenshots.
+resolve. Every `assert` ships the full frame to the model provider, and the persistent
+cache stores prompt text locally — keep sensitive content out of asserted screens: judge
+such states by a narrow condition, or against a redacted reference with `assert --image`.
 
 ## Boundaries
 

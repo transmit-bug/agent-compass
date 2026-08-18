@@ -20,7 +20,9 @@ This is **not** app onboarding in the web sense — desktop apps have no enumera
 scaffold. The deliverable is: a passing environment, a `.gitignore` that keeps the durable
 screen map while dropping runtime debris, and a `screens.md` skeleton with launch facts.
 The screen map itself is built by traversal in later sessions (screen-verify owns the
-contract).
+contract). The machinery — `mid.sh`, the daemon, the persistent cache — is
+**computer-automation**'s: invoke it by name alongside this one whenever a step needs the
+daemon.
 
 ## Steps
 
@@ -62,8 +64,9 @@ contract).
 5. **Scaffold the screen map.** If `.midscene/screens.md` does not exist, ask the user which
    app(s) this project automates and how each is launched (`open -a <App>` / `start <App>`
    / a project command). Create the file with the `# Screen map` header, an `## Apps`
-   section holding one launch line per app, and empty screen sections to be filled by
-   traversal. If it exists, verify the Apps section covers the named apps.
+   section holding one launch line per app, a `## Hints` section of code-derived screen/
+   transition expectations when the app's source is readable, and empty screen sections to
+   be filled by traversal. If it exists, verify the Apps section covers the named apps.
    *Done when: `.midscene/screens.md` exists, is git-trackable, and lists a launch command
    for every app the user named.*
 

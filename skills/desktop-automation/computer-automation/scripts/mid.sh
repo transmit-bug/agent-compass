@@ -5,7 +5,7 @@
 #   mid.sh start <slug>      start a session (auto -2/-3 on name clash)
 #   mid.sh shot <purpose>    take a screenshot and archive it as screenshots/NNN-purpose.png
 #   mid.sh finish            collect reports → markdown → index.md → cleanup → keep last 20 sessions
-#   mid.sh cache clear|stats persistent assert cache (screen hash + exact prompt)
+#   mid.sh cache clear|stats|invalidate "<prompt>"  persistent assert cache (screen hash + exact prompt)
 #   mid.sh ls                list sessions by time
 #   mid.sh clean [N]         manual cleanup (default keeps 20)
 set -u
@@ -22,6 +22,9 @@ daemon_up() { curl -sf -m 2 "http://127.0.0.1:$PORT/ping" >/dev/null 2>&1; }
 sanitize() { printf '%s' "$1" | tr -s ' /\\' '-'; }
 
 current() {
+  # MIDSCENE_SESSION isolates parallel agents in one project: each shell pins its own
+  # session instead of fighting over the shared .current pointer.
+  if [ -n "${MIDSCENE_SESSION:-}" ]; then printf '%s\n' "$ROOT/$MIDSCENE_SESSION"; return; fi
   [ -f "$STATE" ] && cat "$STATE" || true
 }
 
@@ -113,6 +116,28 @@ cmd_cache() {
         echo "persistent cache cleared ($ROOT/.cache.json)"
       fi
       ;;
+    invalidate)
+      local prompt="${3:-}"
+      [ -n "$prompt" ] || { echo "usage: mid.sh cache invalidate <prompt>" >&2; exit 2; }
+      if daemon_up; then
+        local body resp
+        body="$(python3 -c 'import json,sys;print(json.dumps({"prompt":sys.argv[1]}))' "$prompt")"
+        resp="$(curl -sf -m 5 -X POST "http://127.0.0.1:$PORT/cache/invalidate" -H 'Content-Type: application/json' --data-binary "$body")"
+        python3 -c "import json,sys;d=json.loads(sys.argv[1]);print(d.get('msg',''))" "$resp"
+      else
+        python3 - "$ROOT/.cache.json" "$prompt" <<'PY'
+import json, sys, os
+path, prompt = sys.argv[1], sys.argv[2]
+try:
+    entries = json.load(open(path))
+except Exception:
+    print("no persistent cache yet"); raise SystemExit
+kept = [e for e in entries if e.get("prompt") != prompt]
+json.dump(kept, open(path, "w"))
+print(f"invalidated {len(entries) - len(kept)} cached verdict(s) for this prompt")
+PY
+      fi
+      ;;
     stats)
       if daemon_up; then
         curl -sf -m 3 "http://127.0.0.1:$PORT/status" | python3 -c "import json,sys;d=json.load(sys.stdin);print('cache entries:',d.get('cacheEntries'),'/',d.get('cacheMax'),'  match distance <=',d.get('cacheDist'))"
@@ -124,7 +149,7 @@ cmd_cache() {
         fi
       fi
       ;;
-    *) echo "usage: mid.sh cache clear|stats" >&2; exit 2 ;;
+    *) echo "usage: mid.sh cache clear|stats|invalidate <prompt>" >&2; exit 2 ;;
   esac
 }
 
@@ -258,7 +283,7 @@ usage:
   mid.sh shot <purpose>            screenshot + archive (only changed frames, english purpose)
   mid.sh act <prompt>              perform an action (persistent cache: same screen + exact prompt → zero LLM)
   mid.sh assert <prompt> [msg]     assert / verify
-  mid.sh cache clear|stats         persistent result cache (.midscene/.cache.json)
+  mid.sh cache clear|stats|invalidate <p> persistent result cache (.midscene/.cache.json)
   mid.sh finish                    merge reports → index.md → cleanup → keep last 20
   mid.sh ls / clean [N]            list / clean sessions
 EOF

@@ -21,8 +21,11 @@ invoke it by name alongside this one.
 ## The run
 
 1. **Define the flow first**: list the steps with a pass condition per step — the user
-   provides them, or you propose and confirm before driving anything. A re-run flow should
-   already live on the screen map as a route — reuse its verbatim prompts.
+   provides them, or you propose and confirm before driving anything. When the project's
+   source is readable, derive the proposal from it (screens, transitions, element names —
+   routes, window registrations, menu declarations) and seed the map's hints; the source
+   supplies the assumptions, the run supplies the verdicts. A re-run flow should already
+   live on the screen map as a route — reuse its verbatim prompts.
 2. **Session**: `mid.sh start <slug>`; launch the app (`open -a <App>` / `start <App>`),
    confirm it is visible.
 3. For each step, in order:

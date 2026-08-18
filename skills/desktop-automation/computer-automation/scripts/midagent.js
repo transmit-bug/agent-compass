@@ -4,14 +4,21 @@
  *
  * Session state lives in this process, implementing "local compare, LLM on demand":
  *   - Connect once, health-check once (the CLI repeats both on every call)
+ *   - Settle gate: every capture waits for two consecutive strict-identical frames
+ *     before it is used (asserting a transition frame produces a verdict on a half-drawn
+ *     screen and a cache key that never hits again; MIDAGENT_SETTLE_PROBES=0 disables)
  *   - Local screenshot diff (screen-diff.py --strict): screen unchanged → zero LLM
  *   - Persistent result cache (screen-diff.py --hash + .midscene/.cache.json) for
- *     ASSERTIONS ONLY: same screen (dHash hamming ≤ MIDAGENT_CACHE_DIST) + exact same
- *     prompt → the cached verdict, across sessions. Asserts are pure functions of the
- *     screen, so this is safe. ACTS are imperative — a cached act result would mean
- *     skipping the action itself — so acts only reuse the last result in-process when
- *     the screen is bit-identical and the prompt repeats immediately (retry/idempotence
- *     gate); they never persist. Clear with mid.sh cache clear after model/app changes.
+ *     ASSERTIONS ONLY, and only PASSING ones: same screen (dHash hamming ≤
+ *     MIDAGENT_CACHE_DIST) + exact same prompt → the cached verdict, across sessions.
+ *     Asserts are pure functions of the screen, so this is safe; failures never cache
+ *     (a repeat simply re-runs), and low-information frames (near-blank screens where
+ *     dHash keys collide) bypass the cache in both directions.
+ *   - ACTS are imperative — a cached act result would mean skipping the action itself —
+ *     so an act reuses the last result in-process only when the screen is strict-
+ *     identical, the prompt repeats immediately, AND the previous attempt succeeded;
+ *     after a failed attempt the gate stands open and the act re-executes. Never
+ *     persisted. Refresh with mid.sh cache invalidate "<prompt>"; reset with cache clear.
  *
  * Start: node midagent.js serve        (pair with mid.sh agent start)
  * Port: 127.0.0.1:39417 (override with MIDAGENT_PORT)
@@ -33,6 +40,10 @@ const PCACHE_FILE = path.join(MDS, ".cache.json");
 // collide higher, hence the tight default.
 const CACHE_MAX = Number(process.env.MIDAGENT_CACHE_MAX ?? 200);
 const CACHE_DIST = Number(process.env.MIDAGENT_CACHE_DIST ?? 4);
+// Settle gate: a capture is "settled" when two consecutive frames are strict-identical.
+// Default: up to 8 probes 400 ms apart (~3 s worst case). 0 disables (capture immediately).
+const SETTLE_PROBES = Number(process.env.MIDAGENT_SETTLE_PROBES ?? 8);
+const SETTLE_MS = Number(process.env.MIDAGENT_SETTLE_MS ?? 400);
 
 // 1) Load .env (never override existing env vars; model config is read at first AI call,
 //    so late loading is fine)
@@ -48,8 +59,10 @@ if (fs.existsSync(path.join(ROOT, ".env"))) {
 let agent = null;
 let startedAt = null;
 let lastFrame = null; // most recently captured frame path (gate baseline)
-let lastAct = null; // { prompt, result } — in-process act retry gate (never persisted)
-let pcache = []; // [{ h: dHashHex, kind: "assert", prompt, result, ts }] — assertions only
+let lastAct = null; // { prompt, result?, ok } — in-process act retry gate (never persisted)
+let pcache = []; // [{ h: dHashHex, kind: "assert", prompt, result, ts }] — passing assertions only
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ---------- local diff (strict mode: any >=0.05% change is a real state change) ----------
 function diffStrict(a, b) {
@@ -65,6 +78,19 @@ function diffStrict(a, b) {
 
 function screenSame(a, b) {
   return diffStrict(a, b).startsWith("SAME");
+}
+
+// A near-blank frame (solid color, empty canvas, spinner-on-flat) has a dHash that
+// collides with other near-blank frames — keying a cache on it is unreliable. Ask
+// screen-diff.py whether the frame carries enough information to be a cache key.
+function lowInfo(file) {
+  try {
+    return execFileSync("python3", [SCREEN_DIFF, "--lowinfo", file], {
+      encoding: "utf8",
+    }).trim() === "LOWINFO";
+  } catch {
+    return false; // detector unavailable → do not cripple the cache over it
+  }
 }
 
 // ---------- persistent result cache (screen hash + exact prompt → result) ----------
@@ -108,8 +134,8 @@ function pcachePersist() {
   } catch {}
 }
 
-function pcacheLookup(prompt, h) {
-  if (!h || CACHE_MAX <= 0) return null;
+function pcacheLookup(prompt, h, skip) {
+  if (skip || !h || CACHE_MAX <= 0) return null;
   let best = null;
   for (const e of pcache) {
     if (e.prompt !== prompt) continue;
@@ -121,6 +147,10 @@ function pcacheLookup(prompt, h) {
 
 function pcacheStore(prompt, h, result) {
   if (!h || CACHE_MAX <= 0) return;
+  // A failed assert is never persisted: a collision on a similar screen would poison a
+  // rerun with a fake FAIL (and trigger pointless bisection), while re-running a true
+  // FAIL on an unchanged screen costs exactly one AI call.
+  if (!result.pass) return;
   // The cache key is (kind=assert, prompt, screen): evict only same-prompt entries on a
   // perceptually same screen (within CACHE_DIST) — the same prompt on a different
   // screen is a distinct verdict and must survive.
@@ -140,6 +170,25 @@ async function captureTo(dir, name) {
   fs.mkdirSync(path.dirname(p), { recursive: true });
   fs.writeFileSync(p, Buffer.from(data, "base64"));
   return p;
+}
+
+// Capture only after the screen settles: consecutive frames strict-identical. Used for
+// every act/assert/shot capture — acting on or judging a half-drawn transition is how
+// optimistic flows produce phantom failures. A screen that never settles (video,
+// animation) falls through after SETTLE_PROBES with the latest frame.
+async function settledCapture(dir) {
+  const names = [".settle-0.png", ".settle-1.png"];
+  let prev = await captureTo(dir, names[0]);
+  let cur = prev;
+  for (let i = 0; i < SETTLE_PROBES; i++) {
+    await sleep(SETTLE_MS);
+    cur = await captureTo(dir, names[(i + 1) % 2]);
+    if (screenSame(prev, cur)) break;
+    prev = cur;
+  }
+  const last = path.join(dir, ".last.png");
+  fs.copyFileSync(cur, last);
+  return last;
 }
 
 // ---------- HTTP ----------
@@ -181,6 +230,8 @@ async function handle(req, res) {
       cacheEntries: pcache.length,
       cacheMax: CACHE_MAX,
       cacheDist: CACHE_DIST,
+      settleProbes: SETTLE_PROBES,
+      settleMs: SETTLE_MS,
     });
   if (req.method === "POST" && url === "/cache/clear") {
     pcache = [];
@@ -206,6 +257,25 @@ async function handle(req, res) {
     return json(res, 400, { error: "bad json body" });
   }
 
+  // Drop one prompt's cached verdicts (no session needed). The staleness refresh:
+  // `cache invalidate` + re-assert the same verbatim prompt → a fresh verdict without
+  // re-wording (the wording, not the verdict, is what future cache hits key on).
+  if (url === "/cache/invalidate") {
+    const prompt = String(body.prompt || "");
+    if (!prompt) return json(res, 400, { error: "prompt required" });
+    const before = pcache.length;
+    pcache = pcache.filter((e) => e.prompt !== prompt);
+    pcachePersist();
+    const removed = before - pcache.length;
+    return json(res, 200, {
+      ok: true,
+      removed,
+      msg: removed
+        ? `invalidated ${removed} cached verdict(s) for this prompt — re-assert it verbatim for a fresh one`
+        : "no cached verdicts for this prompt",
+    });
+  }
+
   const dir = sessionDirOf(body);
   if (!dir) return json(res, 400, { error: "no active session (run mid.sh start first)" });
   if (!agent) return json(res, 503, { error: "daemon not connected" });
@@ -213,7 +283,7 @@ async function handle(req, res) {
   // POST /shot { purpose } —— record only changed frames
   if (url === "/shot") {
     const purpose = String(body.purpose || "step").replace(/[^A-Za-z0-9._-]/g, "-");
-    const cap = await captureTo(dir, ".last.png");
+    const cap = await settledCapture(dir);
     let saved = false;
     let pathOut = null;
     let msg;
@@ -241,39 +311,55 @@ async function handle(req, res) {
     return json(res, 200, { ok: true, saved, path: pathOut, msg });
   }
 
-  // POST /act { prompt } —— in-process retry gate only: bit-identical screen + the
-  // exact same prompt re-sent immediately → reuse the last result (retry/idempotence);
-  // never persisted — an act's value is the state change it performs, so a cached act
-  // result is a skipped action, not a saving.
+  // POST /act { prompt } —— in-process retry gate only: strict-identical screen + the
+  // exact same prompt re-sent immediately + the previous attempt SUCCEEDED → reuse the
+  // last result (idempotent re-dispatch). A FAILED attempt leaves the gate open, so a
+  // retry re-executes for real. Never persisted — an act's value is the state change it
+  // performs, so a cached act result is a skipped action, not a saving.
   if (url === "/act") {
     const prompt = String(body.prompt || "");
     if (!prompt) return json(res, 400, { error: "prompt required" });
-    const cap = await captureTo(dir, ".last.png");
+    const cap = await settledCapture(dir);
     const unchanged =
       lastFrame && fs.existsSync(lastFrame) && screenSame(lastFrame, cap);
-    if (unchanged && lastAct && lastAct.prompt === prompt) {
+    if (unchanged && lastAct && lastAct.ok && lastAct.prompt === prompt) {
       lastFrame = cap;
       return json(res, 200, {
         ok: true,
         cached: true,
         llm: false,
         result: lastAct.result,
-        msg: "CACHED screen unchanged + same act prompt re-sent, reused last result (retry gate)",
+        msg: "CACHED screen unchanged + same act prompt re-sent after success, reused last result (retry gate)",
       });
     }
-    const result = await agent.aiAct(prompt);
+    let result;
+    try {
+      result = await agent.aiAct(prompt);
+    } catch (e) {
+      lastAct = { prompt, ok: false }; // failed attempt: gate stays open, a retry re-executes
+      throw e;
+    }
     lastFrame = cap;
-    lastAct = { prompt, result };
-    return json(res, 200, { ok: true, cached: false, llm: true, result, msg: "act done" });
+    lastAct = { prompt, result, ok: true };
+    // Advisory only: an element-level prompt burns a full planning cycle on one click
+    // and drags the orchestrator into per-element interaction — the shape the session
+    // exists to avoid. Judgment stays with the caller.
+    const compact = prompt.replace(/\s+/g, "").length;
+    const note =
+      compact < 24
+        ? "note: this prompt reads element-level — prefer one act carrying the whole flow (each step + its intended effect)"
+        : undefined;
+    return json(res, 200, { ok: true, cached: false, llm: true, result, ...(note ? { note } : {}), msg: "act done" });
   }
 
-  // POST /assert { prompt, message? } —— same gate as above
+  // POST /assert { prompt, message? } —— settle, then judge; persistent PASS-only cache
   if (url === "/assert") {
     const prompt = String(body.prompt || "");
     if (!prompt) return json(res, 400, { error: "prompt required" });
-    const cap = await captureTo(dir, ".last.png");
+    const cap = await settledCapture(dir);
     const h = dhashHex(cap);
-    const hit = pcacheLookup(prompt, h);
+    const unkeyable = lowInfo(cap); // near-blank frame: dHash keys collide — bypass cache both ways
+    const hit = pcacheLookup(prompt, h, unkeyable);
     if (hit) {
       lastFrame = cap;
       return json(res, 200, {
@@ -291,8 +377,16 @@ async function handle(req, res) {
       message: r?.message ?? null,
     };
     lastFrame = cap;
-    pcacheStore(prompt, h, result);
-    return json(res, 200, { ok: true, cached: false, llm: true, ...result, msg: result.pass ? "Assertion passed." : "Assertion failed." });
+    if (!unkeyable) pcacheStore(prompt, h, result);
+    return json(res, 200, {
+      ok: true,
+      cached: false,
+      llm: true,
+      ...result,
+      msg:
+        (unkeyable ? "low-information frame — not cacheable; " : "") +
+        (result.pass ? "Assertion passed." : "Assertion failed."),
+    });
   }
 
   return json(res, 404, { error: "unknown endpoint" });

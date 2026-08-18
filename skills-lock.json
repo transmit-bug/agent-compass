@@ -129,25 +129,25 @@
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/desktop-automation/screen-smoke/SKILL.md",
-      "computedHash": "fd31c0fbcbc327c2f1fb5d5af8257bb77a93d0958922b598e40ad3f8c904acdc"
+      "computedHash": "13b32dd2ebfbad67c21834d88b3f21dc45146336add43d26d45da0d27d297f69"
     },
     "screen-verify": {
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/desktop-automation/screen-verify/SKILL.md",
-      "computedHash": "3e829d6114c3122c434ea2c2134e450f77a031598acdef9584590e98862eb490"
+      "computedHash": "9d90b84aaa34c9c011ad5c6c8c0321df039ef255628f528d81a6724f258657dd"
     },
     "computer-automation": {
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/desktop-automation/computer-automation/SKILL.md",
-      "computedHash": "f0101d63f14b5ec376e91e2b7d13eacc4e87703714d6c834efb053588b7f9100"
+      "computedHash": "970823b09af3e770acf15de43adfff7ea8444c0763106941043a564161f75460"
     },
     "screen-setup": {
       "source": "transmit-bug/agent-compass",
       "sourceType": "github",
       "skillPath": "skills/desktop-automation/screen-setup/SKILL.md",
-      "computedHash": "3feb47aecad54bcb36f470caba6a34dd939e20f5b7a27f9a4a50fa50083f4b4c"
+      "computedHash": "9d851f5be6005fd2eabdb5e8ba212e33a5bfb2128d2f73e3288ab90cfa36d964"
     }
   }
 }

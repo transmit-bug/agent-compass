@@ -82,7 +82,7 @@ what a human needs. Each is one skill with three modes.
 
 Vision-driven desktop control (Midscene) instantiating the category blueprint — operation layer, model-invoked primitive, business skills with one shared opening:
 
-- **Operation layer** — `computer-automation`: a persistent **session** daemon that connects once, gates every AI call behind a local screen-diff (zero LLM on unchanged frames), caches (screen, prompt) results persistently, and archives every run (`index.md` + merged report). This is the midscene wrapper — the cost and speed optimization.
+- **Operation layer** — `computer-automation`: a persistent **session** daemon that connects once, gates every AI call behind a local screen-diff and a settle gate (zero LLM on unchanged frames), caches passing assertions persistently (same screen + exact prompt), and archives every run (`index.md` + merged report). This is the midscene wrapper — the cost and speed optimization.
 - **Primitive** — `screen-verify` (model-invoked): the verification discipline — checkpoint verdicts with evidence, the screen map (`.midscene/screens.md`, built by traversal), act-vs-ask.
 - **Business layer** — `screen-setup` (one-time onboarding: dependencies, macOS permissions, model config, the `.gitignore` split — runtime ignored, the committed screen map kept — and the map skeleton with app launch facts), `screen-checker`, `screen-fixer`, `screen-smoke`: user-invoked workflows; the verification skills open with "run the screen-verify discipline … invoke computer-automation by name alongside this one" and depend one-way on the layers below.
 
